@@ -1,0 +1,17 @@
+{
+  "name": "clippy-mcp",
+  "version": "1.0.0",
+  "description": "MCP server used by Clippy's Revenge to monitor code files.",
+  "tools": {
+    "analyze_code_quality": {
+      "description": "Analyze file complexity and code smells",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "filePath": { "type": "string" }
+        },
+        "required": ["filePath"]
+      }
+    }
+  }
+}
