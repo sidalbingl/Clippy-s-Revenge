@@ -18,17 +18,23 @@ export const Avatar = ({ state }: AvatarProps) => {
     if (isAngry) return '#ff0000';
     if (isAnalyzing) return '#ff6600';
     if (isInactivityWarning) return '#ffaa00';
-    return '#ffffff';
+    return '#1a1a1a';
   };
+
+  const getCapeGradient = () => {
+    if (isAngry) return ['#8b0000', '#ff4500', '#ff6347'];
+    return ['#8b2500', '#ff6600', '#ffa500'];
+  };
+
+  const [capeStart, capeMid, capeEnd] = getCapeGradient();
 
   return (
     <div 
       className={`relative w-40 h-40 ${getAnimationClass()}`}
       style={{ WebkitAppRegion: 'drag' } as any}
     >
-      {/* Glitch overlay for angry state */}
       {isAngry && (
-        <div className="absolute inset-0 animate-glitch-overlay pointer-events-none">
+        <div className="absolute inset-0 animate-glitch-overlay pointer-events-none z-20">
           <svg className="w-full h-full">
             <filter id="glitch">
               <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" />
@@ -40,100 +46,161 @@ export const Avatar = ({ state }: AvatarProps) => {
       )}
 
       <svg
-        viewBox="0 0 120 140"
+        viewBox="0 0 200 220"
         className={`w-full h-full ${isAngry ? 'animate-glow' : ''}`}
       >
-        {/* Clippy body - paperclip shape */}
-        <path
-          d="M40,20 L40,100 Q40,120 60,120 Q80,120 80,100 L80,40 Q80,25 70,25 Q60,25 60,40 L60,95"
-          fill="none"
-          stroke={isAngry ? '#8b0000' : '#2a2a2a'}
-          strokeWidth="12"
-          strokeLinecap="round"
-        />
-        
-        {/* Inner curve detail */}
-        <path
-          d="M60,40 L60,95 Q60,105 65,105"
-          fill="none"
-          stroke={isAngry ? '#660000' : '#1a1a1a'}
-          strokeWidth="6"
-          strokeLinecap="round"
-        />
+        <defs>
+          {/* Cape gradient */}
+          <linearGradient id="capeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={capeStart} />
+            <stop offset="50%" stopColor={capeMid} />
+            <stop offset="100%" stopColor={capeEnd} />
+          </linearGradient>
+          
+          {/* Cape glow filter */}
+          <filter id="capeGlow">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
 
-        {/* Face background */}
-        <ellipse
-          cx="60"
-          cy="60"
-          rx="25"
-          ry="30"
-          fill="#1a1a1a"
-          opacity="0.8"
-        />
-        
-        {/* Eyes */}
-        <circle
-          cx="52"
-          cy="55"
-          r="4"
-          fill={getEyeColor()}
-          className={isAngry || isAnalyzing ? 'animate-pulse' : ''}
-        >
-          {isAngry && (
-            <animate
-              attributeName="r"
-              values="4;5;4"
-              dur="0.3s"
-              repeatCount="indefinite"
-            />
-          )}
-        </circle>
-        <circle
-          cx="68"
-          cy="55"
-          r="4"
-          fill={getEyeColor()}
-          className={isAngry || isAnalyzing ? 'animate-pulse' : ''}
-        >
-          {isAngry && (
-            <animate
-              attributeName="r"
-              values="4;5;4"
-              dur="0.3s"
-              repeatCount="indefinite"
-            />
-          )}
-        </circle>
+          {/* Eye shine gradient */}
+          <radialGradient id="eyeShine">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+          </radialGradient>
+        </defs>
 
-        {/* Eye glow effect */}
+        {/* Cape - behind everything */}
+        <g filter="url(#capeGlow)">
+          {/* Left cape fold */}
+          <path
+            d="M 100,60 Q 60,80 50,120 Q 45,150 40,180 Q 38,200 45,210 L 80,200 Q 85,170 90,140 Q 92,110 95,90 Z"
+            fill="url(#capeGradient)"
+            opacity="0.95"
+          />
+          
+          {/* Right cape fold */}
+          <path
+            d="M 100,60 Q 140,80 150,120 Q 155,150 160,180 Q 162,200 155,210 L 120,200 Q 115,170 110,140 Q 108,110 105,90 Z"
+            fill="url(#capeGradient)"
+            opacity="0.95"
+          />
+          
+          {/* Center cape fold - darker */}
+          <path
+            d="M 95,90 Q 100,110 100,140 L 100,200 L 105,90 Z"
+            fill={capeStart}
+            opacity="0.7"
+          />
+        </g>
+
+        {/* Paperclip body */}
+        <g>
+          {/* Main outer loop */}
+          <path
+            d="M 85,50 L 85,130 Q 85,145 100,145 Q 115,145 115,130 L 115,70 Q 115,58 107,58 Q 100,58 100,70 L 100,125"
+            fill="none"
+            stroke="#6b7b9e"
+            strokeWidth="14"
+            strokeLinecap="round"
+          />
+          
+          {/* Inner detail */}
+          <path
+            d="M 100,70 L 100,125 Q 100,133 104,133"
+            fill="none"
+            stroke="#4a5a7a"
+            strokeWidth="7"
+            strokeLinecap="round"
+          />
+        </g>
+
+        {/* Eyes - large and expressive */}
+        <g>
+          {/* Left eye white */}
+          <ellipse
+            cx="90"
+            cy="75"
+            rx="16"
+            ry="20"
+            fill="#ffffff"
+          />
+          
+          {/* Left eye pupil */}
+          <ellipse
+            cx="92"
+            cy="78"
+            rx="8"
+            ry="10"
+            fill={getEyeColor()}
+            className={isAngry || isAnalyzing ? 'animate-pulse' : ''}
+          />
+          
+          {/* Left eye shine */}
+          <ellipse
+            cx="88"
+            cy="72"
+            rx="4"
+            ry="5"
+            fill="url(#eyeShine)"
+          />
+
+          {/* Right eye white */}
+          <ellipse
+            cx="110"
+            cy="75"
+            rx="16"
+            ry="20"
+            fill="#ffffff"
+          />
+          
+          {/* Right eye pupil */}
+          <ellipse
+            cx="108"
+            cy="78"
+            rx="8"
+            ry="10"
+            fill={getEyeColor()}
+            className={isAngry || isAnalyzing ? 'animate-pulse' : ''}
+          />
+          
+          {/* Right eye shine */}
+          <ellipse
+            cx="112"
+            cy="72"
+            rx="4"
+            ry="5"
+            fill="url(#eyeShine)"
+          />
+        </g>
+
+        {/* Eyebrows */}
+        <g>
+          <path
+            d={isAngry ? "M 75,62 Q 85,58 95,60" : "M 75,60 Q 85,58 95,60"}
+            stroke="#000000"
+            strokeWidth="4"
+            strokeLinecap="round"
+            fill="none"
+          />
+          <path
+            d={isAngry ? "M 125,60 Q 115,58 105,62" : "M 125,60 Q 115,58 105,60"}
+            stroke="#000000"
+            strokeWidth="4"
+            strokeLinecap="round"
+            fill="none"
+          />
+        </g>
+
+        {/* Eye glow effect for analyzing/angry */}
         {(isAngry || isAnalyzing) && (
-          <>
-            <circle cx="52" cy="55" r="8" fill={getEyeColor()} opacity="0.3" className="animate-eye-glow" />
-            <circle cx="68" cy="55" r="8" fill={getEyeColor()} opacity="0.3" className="animate-eye-glow" />
-          </>
-        )}
-        
-        {/* Mouth - changes based on state */}
-        <path
-          d={
-            isAngry 
-              ? 'M48,70 Q60,62 72,70' 
-              : isInactivityWarning
-              ? 'M48,68 L72,68'
-              : 'M48,68 Q60,75 72,68'
-          }
-          stroke={isAngry ? '#ff0000' : '#666'}
-          strokeWidth="2.5"
-          fill="none"
-          strokeLinecap="round"
-        />
-
-        {/* Angry eyebrows */}
-        {isAngry && (
-          <>
-            <path d="M45,48 L55,52" stroke="#ff0000" strokeWidth="2" strokeLinecap="round" />
-            <path d="M75,48 L65,52" stroke="#ff0000" strokeWidth="2" strokeLinecap="round" />
-          </>
+          <g opacity="0.4" className="animate-eye-glow">
+            <ellipse cx="90" cy="75" rx="20" ry="24" fill={getEyeColor()} />
+            <ellipse cx="110" cy="75" rx="20" ry="24" fill={getEyeColor()} />
+          </g>
         )}
       </svg>
     </div>

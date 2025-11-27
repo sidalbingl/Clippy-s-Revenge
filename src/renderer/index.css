@@ -100,6 +100,80 @@ body {
   animation: idle-float 3s ease-in-out infinite;
 }
 
+/* Clippy avatar base styling */
+.clippy-avatar {
+  filter: drop-shadow(0 4px 12px rgba(255, 102, 0, 0.3));
+  transition: filter 0.3s ease;
+  image-rendering: auto;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* Angry state - red tint with intense glow */
+.clippy-angry {
+  filter: 
+    drop-shadow(0 0 20px rgba(255, 0, 0, 0.8))
+    drop-shadow(0 0 40px rgba(255, 0, 0, 0.5))
+    hue-rotate(-15deg)
+    brightness(1.2)
+    saturate(1.4);
+  animation: angry-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes angry-pulse {
+  0%, 100% {
+    filter: 
+      drop-shadow(0 0 20px rgba(255, 0, 0, 0.8))
+      drop-shadow(0 0 40px rgba(255, 0, 0, 0.5))
+      hue-rotate(-15deg)
+      brightness(1.2)
+      saturate(1.4);
+  }
+  50% {
+    filter: 
+      drop-shadow(0 0 30px rgba(255, 0, 0, 1))
+      drop-shadow(0 0 60px rgba(255, 0, 0, 0.7))
+      hue-rotate(-20deg)
+      brightness(1.3)
+      saturate(1.5);
+  }
+}
+
+/* Analyzing state - enhanced orange glow */
+.clippy-analyzing {
+  filter: 
+    drop-shadow(0 0 16px rgba(255, 102, 0, 0.7))
+    drop-shadow(0 0 32px rgba(255, 140, 0, 0.5))
+    brightness(1.15)
+    saturate(1.2);
+  animation: analyzing-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes analyzing-glow {
+  0%, 100% {
+    filter: 
+      drop-shadow(0 0 16px rgba(255, 102, 0, 0.7))
+      drop-shadow(0 0 32px rgba(255, 140, 0, 0.5))
+      brightness(1.15)
+      saturate(1.2);
+  }
+  50% {
+    filter: 
+      drop-shadow(0 0 24px rgba(255, 102, 0, 0.9))
+      drop-shadow(0 0 48px rgba(255, 140, 0, 0.7))
+      brightness(1.25)
+      saturate(1.3);
+  }
+}
+
+/* Warning state - yellow tint */
+.clippy-warning {
+  filter: 
+    drop-shadow(0 0 12px rgba(255, 170, 0, 0.6))
+    hue-rotate(10deg)
+    brightness(1.1);
+}
+
 /* Subtle bounce for inactivity warning */
 @keyframes bounce-subtle {
   0%, 100% {
