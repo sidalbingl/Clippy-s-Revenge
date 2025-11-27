@@ -26,12 +26,9 @@ export const Avatar = ({ state }: AvatarProps) => {
       className={`relative w-40 h-40 ${getAnimationClass()}`}
       style={{ WebkitAppRegion: 'drag' } as any}
     >
-      {/* Spooky Cape Layer - Behind Clippy */}
-      <div className="spooky-cape" />
-
       {/* Glitch overlay for angry state */}
       {isAngry && (
-        <div className="absolute inset-0 animate-glitch-overlay pointer-events-none z-20">
+        <div className="absolute inset-0 animate-glitch-overlay pointer-events-none">
           <svg className="w-full h-full">
             <filter id="glitch">
               <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" />
@@ -44,7 +41,7 @@ export const Avatar = ({ state }: AvatarProps) => {
 
       <svg
         viewBox="0 0 120 140"
-        className={`w-full h-full relative z-10 ${isAngry ? 'animate-glow' : ''}`}
+        className={`w-full h-full ${isAngry ? 'animate-glow' : ''}`}
       >
         {/* Clippy body - paperclip shape */}
         <path
