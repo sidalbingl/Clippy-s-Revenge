@@ -38,8 +38,9 @@ Kiro should use this spec to generate all UI components inside the Electron rend
 - Glitch overlay (optional SVG filter).
 - Eye glow pulse.
 
-## Deliverables (expected from Kiro-generated code)
-- `Avatar.tsx`
-- `SpeechBubble.tsx`
-- `useClippyState.ts`
-- Tailwind or CSS module files containing animations
+## Deliverables
+- `src/renderer/components/Avatar.tsx`
+- `src/renderer/components/SpeechBubble.tsx`
+- `src/renderer/hooks/useClippyState.ts`
+- `src/renderer/hooks/useFloatingMotion.ts`
+- `src/renderer/index.css` - Tailwind + custom animations

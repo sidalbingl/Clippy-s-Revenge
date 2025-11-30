@@ -1,6 +1,6 @@
 # Audio Files
 
-This directory contains sound effects for Evil Clippy.
+This directory contains sound effects for Evil Clippy's AI-powered code analysis.
 
 ## Files
 

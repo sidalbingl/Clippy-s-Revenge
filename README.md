@@ -1,32 +1,44 @@
 # Clippy's Revenge
 
-Evil Clippy haunts your code with sarcastic commentary and visual effects.
+Evil Clippy haunts your code with AI-powered sarcastic commentary and visual effects.
 
-## Event Pipeline
+## Features
+
+- 🤖 **AI-Powered Analysis** - Gemini 2.5 Flash analyzes your code in real-time
+- 😈 **Sarcastic Commentary** - Brutal but helpful feedback with dark humor
+- 🎭 **Visual Effects** - Shake, glitch, and red flash based on severity
+- 💬 **Smart Fallback** - Local analysis when AI is unavailable
+- ⚡ **Fast & Cached** - Response caching and rate limiting
+- 🎃 **Halloween Theme** - Spooky, dark aesthetic
+
+## How It Works
 
 ### Complete Flow
 
 ```
-User saves file
+User saves code file
     ↓
 Chokidar detects change (src/mcp/index.ts)
     ↓
-Code Quality Analyzer runs (src/mcp/analyzers/codeQualityAnalyzer.ts)
+Smart Analyzer checks cache
     ↓
-Generates severity + insult message
+Gemini 2.5 Flash analyzes code (src/mcp/services/geminiService.ts)
+    ├─ Determines severity (low/medium/high)
+    ├─ Generates sarcastic message
+    └─ Provides technical advice
     ↓
-MCPWatcher callback fires
+If Gemini fails → Local fallback (src/mcp/analyzers/codeQualityAnalyzer.ts)
     ↓
-Electron Main Process forwards via IPC (src/main/main.ts)
+Result cached for 15 minutes
+    ↓
+Electron Main forwards via IPC (src/main/main.ts)
     ↓
 Renderer receives event (src/renderer/hooks/useClippyState.ts)
     ↓
-State updates trigger effects (src/renderer/App.tsx)
-    ↓
-Visual effects applied:
-    - Low: Message only
-    - Medium: Message + Shake
-    - High: Message + Shake + Glitch + Red Flash
+Clippy displays message with effects:
+    - Low: Message only (12 seconds)
+    - Medium: Message + Shake (10 seconds)
+    - High: Message + Shake + Glitch + Red Flash (8 seconds)
 ```
 
 ## Project Structure
@@ -34,169 +46,162 @@ Visual effects applied:
 ```
 src/
 ├── main/
-│   ├── main.ts          # Electron main process + MCP integration
+│   ├── main.ts          # Electron main process
 │   └── preload.ts       # IPC bridge
 ├── mcp/
 │   ├── index.ts         # File watcher + event dispatcher
 │   ├── analyzers/
-│   │   └── codeQualityAnalyzer.ts  # Code analysis logic
+│   │   ├── smartAnalyzer.ts         # Gemini + fallback orchestrator
+│   │   ├── codeQualityAnalyzer.ts   # Local fallback analysis
+│   │   └── laughDetector.ts         # Embarrassing pattern detector
+│   ├── services/
+│   │   ├── geminiService.ts         # Gemini 2.5 Flash API client
+│   │   ├── cacheService.ts          # Response caching (15 min TTL)
+│   │   └── rateLimiter.ts           # Rate limiting (10/min)
 │   └── responseEngine/
-│       ├── index.ts                # Response generation engine
-│       ├── insults.ts              # Predefined insult collections
-│       ├── responseEngine.test.ts  # Unit tests
-│       ├── example.ts              # Usage examples
-│       └── README.md               # Engine documentation
+│       ├── index.ts                 # Fallback message generator
+│       └── insults.ts               # Predefined insult collections
 └── renderer/
     ├── App.tsx          # Main UI + effect orchestration
     ├── components/
     │   ├── Avatar.tsx           # Clippy avatar with animations
-    │   ├── SpeechBubble.tsx     # Win95-style speech bubble
-    │   └── DevControls.tsx      # Testing controls (dev only)
+    │   └── SpeechBubble.tsx     # Speech bubble with typing effect
     └── hooks/
         ├── useClippyState.ts    # State management + event handling
+        ├── useFloatingMotion.ts # Floating animation
         └── effects/
             ├── useShake.ts      # Shake effect hook
             ├── useGlitch.ts     # Glitch effect hook
-            └── useSound.ts      # Sound effect hook (optional)
+            └── useSound.ts      # Sound effect hook
 ```
 
-## Features
+## AI Analysis
+
+### Gemini 2.5 Flash
+- **Model**: `gemini-2.5-flash` via `@google/genai` SDK
+- **Prompt**: Sarcastic code critic with dark humor
+- **Output**: Severity + 2 short sarcastic sentences + technical advice
+- **Cache**: 15 minute TTL to reduce API calls
+- **Rate Limit**: 10 requests per minute
+
+### Severity Levels
+- **HIGH**: Security vulnerabilities, crashes, data loss
+- **MEDIUM**: Bad practices, anti-patterns
+- **LOW**: Style issues, minor problems
+
+### Fallback System
+If Gemini fails (API down, rate limit, no key):
+- Local regex-based analysis
+- Predefined sarcastic messages
+- Same severity detection logic
+
+## Avatar & Effects
 
 ### Avatar States
 - `idle` - Floating animation
-- `analyzing` - Orange eyes, medium concern
-- `angry` - Red eyes, angry expression
+- `analyzing` - Orange eyes
+- `angry` - Red eyes, furious expression
 - `inactivity_warning` - Bouncing animation
 
-### Effects System
+### Visual Effects
 - **Shake**: Medium (450ms) or High (700ms) intensity
 - **Glitch**: Color channel offset + hue rotation (600ms)
 - **Red Flash**: Brief red overlay for high severity
-- **Audio**: Severity-based sound effects (low beep, medium glitch, high bass)
+- **Audio**: Severity-based sound effects
 
-### Code Analysis
-Checks for:
-- Console logs
-- Magic numbers
-- Nested loops/conditionals
-- Function complexity
-- Multiple return statements
+### Laugh Detection
+Triggers special laugh animation for embarrassing patterns:
+- Silly variable names (a, b, c, temp1, lol)
+- Beginner mistakes (if(true), comparing to self)
+- Meme variables (wtf, yolo, lmao)
+- Console.log spam (10+ instances)
 
-### Response Engine
-- **Deterministic**: Fast, no API calls
-- **Modular**: Easy to extend with AI later
-- **Context-aware**: Selects insults based on specific issues
-- **Severity-based**: Different insult pools for low/medium/high
-- **Testable**: Pure functions with unit tests
+## Setup
 
-## Development
-
-### Install
+### 1. Install Dependencies
 ```bash
 npm install
 ```
 
-### Run Dev Mode
+### 2. Get Gemini API Key
+1. Go to https://aistudio.google.com/app/apikey
+2. Create a new API key
+3. Copy the key
+
+### 3. Configure Environment
+Create `.env` file:
+```env
+GEMINI_API_KEY=your_api_key_here
+GEMINI_MAX_REQUESTS_PER_MINUTE=10
+GEMINI_CACHE_TTL_MINUTES=15
+```
+
+### 4. Run Development Mode
 ```bash
-npm run dev
+# Terminal 1: Start Vite dev server
+npm run dev:renderer
+
+# Terminal 2: Start Electron
+npm start
 ```
 
 This starts:
-1. Vite dev server (renderer)
+1. Vite dev server on http://localhost:5173
 2. Electron app with hot reload
-3. MCP watcher on current directory
+3. File watcher on current directory
+4. Gemini API integration
 
-### Test Events
-In dev mode, use the "Dev" button in top-right to manually trigger events.
-
-### Build
+### 5. Build for Production
 ```bash
 npm run build
+npm start
 ```
 
 ## Configuration
 
+### Environment Variables
+- `GEMINI_API_KEY` - Your Gemini API key (required for AI)
+- `GEMINI_MAX_REQUESTS_PER_MINUTE` - Rate limit (default: 10)
+- `GEMINI_CACHE_TTL_MINUTES` - Cache duration (default: 15)
+
 ### Watch Directory
 - Dev mode: Auto-watches current directory
-- Production: Use IPC to select directory via dialog
+- Production: Can be configured via IPC
 
-### Severity Mapping
-- **Low**: Simple issues (unused vars, etc.)
-- **Medium**: Console logs, magic numbers, moderate complexity
-- **High**: Nested loops, high complexity, multiple issues
-
-## Fallback Logic
-
-### Error Handling
-- Invalid events → Logged and ignored
-- Analysis errors → Fallback insult sent
-- Missing window → Event queued/dropped
-- Rate limiting → 1 second cooldown between analyses
-
-### Default Messages
-If MCP doesn't provide a message, defaults are used based on severity.
+### Customizing Clippy's Personality
+Edit `src/mcp/services/geminiService.ts` → `buildPrompt()` method:
+- Change tone (more/less sarcastic)
+- Adjust message length
+- Add custom examples
+- Modify severity rules
 
 ## Performance
 
-- Async file analysis (non-blocking)
-- CSS-based animations (GPU accelerated)
-- Rate limiting prevents spam
-- Debounced file watching (500ms stabilization)
+- **Async Analysis**: Non-blocking file analysis
+- **Smart Caching**: 15-minute cache reduces API calls
+- **Rate Limiting**: 10 requests/minute prevents quota exhaustion
+- **GPU Animations**: CSS-based effects for smooth performance
+- **Debounced Watching**: 500ms stabilization prevents spam
+
+## Troubleshooting
+
+### Gemini Not Working
+1. Check API key in `.env`
+2. Verify key is active at https://aistudio.google.com
+3. Check console for error messages
+4. System will fallback to local analysis automatically
+
+### Clippy Not Appearing
+1. Ensure both `npm run dev:renderer` and `npm start` are running
+2. Check Electron window is open (look in taskbar)
+3. Try Alt+Tab to find the window
+
+### Messages Too Fast/Slow
+Edit `src/renderer/components/SpeechBubble.tsx` line 64:
+```typescript
+const displayDuration = emotion === 'furious' ? 8000 : emotion === 'annoyed' ? 10000 : 12000;
+```
 
 ## License
 
 MIT
-
-
-## Response Engine
-
-The response engine generates sarcastic insults based on code quality issues. It's fully deterministic and requires no external API calls.
-
-### Architecture
-
-- **Pure functions**: All logic is deterministic and testable
-- **Modular design**: Easy to swap with AI-based system later
-- **Priority-based selection**: Chooses most relevant insult for detected issues
-- **Extensible**: Simple to add new insult categories
-
-### Usage
-
-```typescript
-import { generateResponse } from './mcp/responseEngine';
-
-const response = generateResponse('high', {
-  containsConsoleLogs: true,
-  hasNestedLoops: true,
-});
-
-console.log(response);
-// { message: "Nested loops? Bold move. Wrong, but bold.", emotion: "furious" }
-```
-
-### Insult Categories
-
-Each severity level has 6 categories:
-- General insults
-- Console log specific
-- Magic number specific
-- Complexity specific
-- Nested loop specific
-- Long function specific
-
-### Future AI Integration
-
-The response engine is designed to be easily replaced with an AI-based system:
-
-```typescript
-// Future implementation
-async function generateAIResponse(severity, metadata) {
-  try {
-    return await callLLM(severity, metadata);
-  } catch (error) {
-    // Fallback to deterministic engine
-    return generateResponse(severity, metadata);
-  }
-}
-```
-
-See `src/mcp/responseEngine/README.md` for detailed documentation.

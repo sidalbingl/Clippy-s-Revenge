@@ -1,6 +1,6 @@
 # AudioEngine
 
-Non-blocking audio system for Evil Clippy that plays sounds based on code quality severity.
+Non-blocking audio system for Evil Clippy that plays sounds based on AI-analyzed code severity.
 
 ## Features
 
@@ -79,12 +79,14 @@ Sounds are throttled to prevent overlap:
 
 ## Integration
 
-The AudioEngine is integrated into the app's severity system:
+The AudioEngine is integrated into the app's AI-powered severity system:
 
 ```
 Code Issue Detected
     ↓
-Severity Calculated (low/medium/high)
+Gemini 2.5 Flash analyzes code
+    ↓
+Severity determined (low/medium/high)
     ↓
 App.tsx receives severity
     ↓

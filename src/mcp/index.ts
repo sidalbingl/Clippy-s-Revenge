@@ -1,6 +1,11 @@
 import * as chokidar from 'chokidar';
 import * as path from 'path';
-import { analyzeCodeQuality, generateInsultMessage } from './analyzers/codeQualityAnalyzer';
+import { smartAnalyzer } from './analyzers/smartAnalyzer';
+import { detectLaugh } from './analyzers/laughDetector';
+import * as dotenv from 'dotenv';
+
+// Load environment variables - override system env vars
+dotenv.config({ override: true });
 
 export interface MCPEvent {
   type: 'INSULT_TRIGGER';
@@ -10,6 +15,8 @@ export interface MCPEvent {
   emotion: 'idle' | 'annoyed' | 'furious';
   shouldLaugh?: boolean;
   laughReason?: string;
+  usedAI?: boolean;
+  reason?: string;
 }
 
 type EventCallback = (event: MCPEvent) => void;
@@ -26,6 +33,17 @@ export class MCPWatcher {
 
   start(callback: EventCallback) {
     this.eventCallback = callback;
+
+    // Initialize Gemini if API key is available
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    console.log('[MCP] API Key from env:', geminiApiKey ? geminiApiKey.substring(0, 15) + '...' : 'Not found');
+    
+    if (geminiApiKey) {
+      smartAnalyzer.initializeGemini(geminiApiKey);
+      console.log('[MCP] Gemini initialized');
+    } else {
+      console.log('[MCP] No Gemini API key found, using local analysis only');
+    }
 
     this.watcher = chokidar.watch(this.watchPath, {
       ignored: /(^|[\/\\])\../, // ignore dotfiles
@@ -79,39 +97,26 @@ export class MCPWatcher {
     try {
       console.log(`[MCP] Analyzing: ${filePath}`);
       
-      const result = await analyzeCodeQuality(filePath);
-      const message = generateInsultMessage(result, filePath);
+      const laughResult = await detectLaugh(filePath);
 
-      const emotionMap = {
-        high: 'furious' as const,
-        medium: 'annoyed' as const,
-        low: 'idle' as const,
-      };
-
-      const event: MCPEvent = {
-        type: 'INSULT_TRIGGER',
-        severity: result.insultSeverity,
-        filePath,
-        message,
-        emotion: emotionMap[result.insultSeverity],
-        shouldLaugh: result.shouldTriggerLaugh,
-        laughReason: result.laughMetadata?.laughReason,
-      };
-
-      console.log(`[MCP] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-      console.log(`[MCP] 📊 Severity: ${event.severity.toUpperCase()}`);
-      console.log(`[MCP] 💬 Message: ${event.message}`);
-      if (event.shouldLaugh) {
-        console.log(`[MCP] 😈 LAUGH MODE: ${event.laughReason}`);
-      } else {
-        console.log(`[MCP] 🔇 No laugh (no embarrassing patterns)`);
-      }
-      console.log(`[MCP] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-
+      // Directly analyze with Gemini (no quick analysis)
+      const result = await smartAnalyzer.analyze(filePath);
+      
+      console.log(`[MCP] Analysis complete: ${result.severity} (AI: ${result.usedAI})`);
+      
       if (this.eventCallback) {
+        const event: MCPEvent = {
+          type: 'INSULT_TRIGGER',
+          severity: result.severity,
+          filePath,
+          message: result.message,
+          emotion: result.emotion,
+          shouldLaugh: laughResult.shouldPlayLaugh,
+          laughReason: laughResult.shouldPlayLaugh ? 'Embarrassing code detected' : undefined,
+          usedAI: result.usedAI,
+          reason: result.reason,
+        };
         this.eventCallback(event);
-      } else {
-        console.warn('[MCP] No callback registered for events');
       }
     } catch (error) {
       console.error('[MCP] Error analyzing file:', error);
@@ -122,7 +127,7 @@ export class MCPWatcher {
           type: 'INSULT_TRIGGER',
           severity: 'low',
           filePath,
-          message: "I tried to judge your code but it broke my analyzer. Impressive.",
+          message: "Kodunu analiz etmeye çalıştım ama analizörümü bozdu. Etkileyici.",
           emotion: 'annoyed',
         };
         this.eventCallback(fallbackEvent);
@@ -135,3 +140,5 @@ export class MCPWatcher {
     }
   }
 }
+
+

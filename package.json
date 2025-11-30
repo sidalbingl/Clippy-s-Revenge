@@ -37,7 +37,10 @@
     "wait-on": "^7.2.0"
   },
   "dependencies": {
+    "@google/genai": "^1.30.0",
+    "@google/generative-ai": "^0.24.1",
     "chokidar": "^3.5.3",
+    "dotenv": "^17.2.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   }

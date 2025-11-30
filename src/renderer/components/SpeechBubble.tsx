@@ -10,19 +10,22 @@ interface SpeechBubbleProps {
 
 const EMOTION_STYLES = {
   idle: {
-    borderColor: 'border-evil-grey',
-    textColor: 'text-gray-300',
-    pointerColor: '#666666',
+    bg: 'rgba(42, 42, 42, 0.95)',
+    border: '#666666',
+    text: '#e0e0e0',
+    glow: 'rgba(147, 51, 234, 0.4)',
   },
   annoyed: {
-    borderColor: 'border-orange-700',
-    textColor: 'text-orange-200',
-    pointerColor: '#ff6600',
+    bg: 'rgba(139, 37, 0, 0.95)',
+    border: '#ff6600',
+    text: '#ffe0cc',
+    glow: 'rgba(255, 102, 0, 0.6)',
   },
   furious: {
-    borderColor: 'border-evil-red-dark',
-    textColor: 'text-red-200',
-    pointerColor: '#ff0000',
+    bg: 'rgba(139, 0, 0, 0.95)',
+    border: '#ff0000',
+    text: '#ffcccc',
+    glow: 'rgba(255, 0, 0, 0.8)',
   },
 };
 
@@ -34,6 +37,7 @@ export const SpeechBubble = ({
   const [displayedText, setDisplayedText] = useState('');
   const [showBubble, setShowBubble] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
 
   const styles = EMOTION_STYLES[emotion];
 
@@ -42,22 +46,34 @@ export const SpeechBubble = ({
       setShowBubble(true);
       setDisplayedText('');
       setIsTyping(true);
+      setIsFadingOut(false);
       let index = 0;
       
-      const typingSpeed = emotion === 'furious' ? 20 : emotion === 'annoyed' ? 25 : 30;
+      const typingSpeed = emotion === 'furious' ? 15 : emotion === 'annoyed' ? 20 : 25;
       
-      const interval = setInterval(() => {
+      const typingInterval = setInterval(() => {
         if (index < message.length) {
           setDisplayedText(message.slice(0, index + 1));
           index++;
         } else {
-          clearInterval(interval);
+          clearInterval(typingInterval);
           setIsTyping(false);
         }
       }, typingSpeed);
 
+      const displayDuration = emotion === 'furious' ? 8000 : emotion === 'annoyed' ? 10000 : 12000;
+      
+      const hideTimeout = setTimeout(() => {
+        setIsFadingOut(true);
+        setTimeout(() => {
+          setShowBubble(false);
+          setDisplayedText('');
+        }, 500);
+      }, displayDuration);
+
       return () => {
-        clearInterval(interval);
+        clearInterval(typingInterval);
+        clearTimeout(hideTimeout);
         setIsTyping(false);
       };
     } else if (!isVisible) {
@@ -68,63 +84,79 @@ export const SpeechBubble = ({
   if (!showBubble || !message) return null;
 
   return (
-    <div className="relative mb-6 animate-fade-in max-w-xs min-w-[200px]">
-      {/* Win95 Dark style speech bubble with emotion-based styling */}
+    <div 
+      style={{
+        position: 'absolute',
+        maxWidth: '280px',
+        minWidth: '180px',
+        animation: isFadingOut ? 'fadeOut 0.5s ease-out' : 'fadeIn 0.3s ease-out',
+        opacity: isFadingOut ? 0 : 1
+      }}
+    >
+      {/* Modern Halloween-themed bubble */}
       <div 
-        className={`
-          win95-bubble border-2 ${styles.borderColor}
-          p-4 relative transition-all duration-300
-          ${emotion === 'furious' ? 'animate-pulse' : ''}
-        `}
         style={{
-          filter: `drop-shadow(0 0 ${emotion === 'furious' ? '16px' : emotion === 'annoyed' ? '12px' : '8px'} ${styles.pointerColor}40)`,
+          background: styles.bg,
+          border: `2px solid ${styles.border}`,
+          borderRadius: '16px',
+          padding: '12px 16px',
+          position: 'relative',
+          backdropFilter: 'blur(10px)',
+          boxShadow: `
+            0 0 20px ${styles.glow},
+            0 4px 12px rgba(0, 0, 0, 0.6),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1)
+          `,
+          animation: emotion === 'furious' ? 'pulse 0.8s ease-in-out infinite' : 'none'
         }}
       >
-        {/* Retro pixel grid overlay */}
-        <div 
-          className="absolute inset-0 pointer-events-none opacity-10"
+        {/* Message text */}
+        <p 
           style={{
-            backgroundImage: `
-              repeating-linear-gradient(0deg, transparent, transparent 1px, ${styles.pointerColor} 1px, ${styles.pointerColor} 2px),
-              repeating-linear-gradient(90deg, transparent, transparent 1px, ${styles.pointerColor} 1px, ${styles.pointerColor} 2px)
-            `,
-            backgroundSize: '4px 4px',
+            color: styles.text,
+            fontSize: '13px',
+            fontFamily: 'monospace',
+            lineHeight: '1.5',
+            margin: 0,
+            textShadow: `0 0 8px ${styles.glow}`,
+            wordBreak: 'break-word'
           }}
-        />
-        
-        {/* Message text with CRT glow */}
-        <p className={`${styles.textColor} crt-text-glow text-sm font-mono leading-relaxed whitespace-pre-wrap break-words relative z-10`}>
+        >
           {displayedText}
           {isTyping && (
             <span 
-              className="animate-blink crt-text-glow"
-              style={{ color: styles.pointerColor }}
+              style={{
+                color: styles.border,
+                animation: 'blink 1s step-end infinite',
+                textShadow: `0 0 8px ${styles.glow}`
+              }}
             >
               ▌
             </span>
           )}
         </p>
-
-        {/* Furious state: additional red glow overlay */}
-        {emotion === 'furious' && (
-          <div className="absolute inset-0 pointer-events-none bg-evil-red opacity-5 animate-pulse" />
-        )}
       </div>
 
-      {/* Speech bubble pointer with pixel-perfect styling */}
-      <div className="absolute -bottom-3 left-10">
-        <div 
-          className="w-0 h-0 border-l-[12px] border-r-[12px] border-t-[12px] border-transparent"
-          style={{ 
-            borderTopColor: styles.pointerColor,
-            filter: `drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8))`,
-          }}
+      {/* Pointer tail - pointing up to avatar */}
+      <svg
+        width="20"
+        height="12"
+        viewBox="0 0 20 12"
+        style={{
+          position: 'absolute',
+          top: '-10px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          filter: `drop-shadow(0 -2px 4px rgba(0, 0, 0, 0.6))`
+        }}
+      >
+        <path
+          d="M 10,0 L 0,12 L 20,12 Z"
+          fill={styles.bg}
+          stroke={styles.border}
+          strokeWidth="2"
         />
-        <div 
-          className="absolute top-[-1px] left-[-10px] w-0 h-0 border-l-[10px] border-r-[10px] border-t-[10px] border-transparent"
-          style={{ borderTopColor: 'var(--evil-black)' }}
-        />
-      </div>
+      </svg>
     </div>
   );
 };

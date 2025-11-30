@@ -1,18 +1,28 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import * as path from 'path';
+import * as dotenv from 'dotenv';
 import { MCPWatcher } from '../mcp';
+
+// Load environment variables - override system env vars
+dotenv.config({ override: true });
 
 let mainWindow: BrowserWindow | null = null;
 let mcpWatcher: MCPWatcher | null = null;
 
 function createWindow() {
+  const { screen } = require('electron');
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+
   mainWindow = new BrowserWindow({
-    width: 400,
-    height: 500,
+    width: width,
+    height: height,
     transparent: true,
     frame: false,
     alwaysOnTop: true,
     resizable: false,
+    hasShadow: false,
+    skipTaskbar: false, // Show in taskbar
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -20,16 +30,27 @@ function createWindow() {
     },
   });
 
+  mainWindow.setPosition(0, 0);
+  mainWindow.maximize();
+  mainWindow.setBounds({ x: 0, y: 0, width: width, height: height });
+
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173');
   } else {
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
 
-  mainWindow.setPosition(
-    Math.floor(process.platform === 'win32' ? require('electron').screen.getPrimaryDisplay().workAreaSize.width - 420 : 0),
-    Math.floor(process.platform === 'win32' ? require('electron').screen.getPrimaryDisplay().workAreaSize.height - 520 : 0)
-  );
+  // Initially ignore mouse events, renderer will control this
+  mainWindow.setIgnoreMouseEvents(true, { forward: true });
+
+  // Listen for mouse enter/leave events from renderer
+  mainWindow.webContents.on('cursor-changed', (event, type) => {
+    if (type === 'default' || type === 'pointer') {
+      mainWindow?.setIgnoreMouseEvents(true, { forward: true });
+    } else {
+      mainWindow?.setIgnoreMouseEvents(false);
+    }
+  });
 }
 
 function startMCPWatcher(watchPath: string) {
@@ -57,6 +78,8 @@ function startMCPWatcher(watchPath: string) {
     console.error('[Main] Error starting MCP watcher:', error);
   }
 }
+
+
 
 app.whenReady().then(() => {
   createWindow();

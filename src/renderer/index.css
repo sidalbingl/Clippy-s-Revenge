@@ -2,76 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Evil Clippy Dark Win95 Theme */
 :root {
-  --evil-black: #0a0a0a;
-  --evil-dark: #1a1a1a;
-  --evil-grey: #2a2a2a;
-  --evil-red: #ff0000;
-  --evil-red-dark: #8b0000;
-  --evil-red-darker: #660000;
-  --crt-glow: rgba(255, 0, 0, 0.15);
+  /* HALLOWEEN RENKLERİ */
+  --halloween-purple: rgba(147, 51, 234, 0.6);
+  --halloween-green: rgba(74, 222, 128, 0.4);
+  --halloween-orange: rgba(251, 146, 60, 0.2);
+
+  /* GÜNCELLENMİŞ DAHA SIKI GLOW */
+  /* Avatar küçüldüğü için blur değerlerini düşürdük (10px -> 8px, 25px -> 15px) */
+  --halloween-glow: drop-shadow(0 0 8px var(--halloween-purple)) 
+                    drop-shadow(0 0 15px var(--halloween-green))
+                    drop-shadow(0 0 30px var(--halloween-orange));
+
+  /* KIZGINLIK GLOW */
+  --angry-glow: drop-shadow(0 0 10px rgba(255, 0, 0, 0.8)) 
+                drop-shadow(0 0 25px rgba(255, 69, 0, 0.6));
 }
 
 body {
   margin: 0;
   padding: 0;
   background: transparent;
-  overflow: hidden;
-  font-family: 'Perfect DOS VGA 437', 'Courier New', monospace;
-  image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
+  overflow: visible;
+  font-family: sans-serif;
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 #root {
   width: 100vw;
   height: 100vh;
-  position: relative;
-}
-
-/* CRT Screen effect overlay */
-#root::before {
-  content: '';
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: 
-    repeating-linear-gradient(
-      0deg,
-      rgba(0, 0, 0, 0.15),
-      rgba(0, 0, 0, 0.15) 1px,
-      transparent 1px,
-      transparent 2px
-    );
+  background: transparent;
+  overflow: visible;
   pointer-events: none;
-  z-index: 1000;
-  opacity: 0.3;
 }
 
-/* Subtle noise texture */
-#root::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 999;
-  animation: noise-flicker 0.2s infinite;
+/* Süzülme Animasyonu */
+@keyframes spooky-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(1deg); }
 }
 
-@keyframes noise-flicker {
-  0%, 100% { opacity: 0.03; }
-  50% { opacity: 0.05; }
+.animate-spooky-float {
+  animation: spooky-float 4s ease-in-out infinite;
+  will-change: transform;
 }
 
-/* Fade in animation */
-@keyframes fade-in {
+/* Kanat Çırpma (Nabız) */
+@keyframes pulse-wing {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.05) rotate(2deg); }
+}
+
+.animate-pulse-slow {
+    animation: pulse-wing 2s ease-in-out infinite;
+    transform-origin: center;
+}
+
+/* Kızgın Titreme */
+@keyframes angry-shake {
+  0% { transform: translate(1px, 1px); }
+  25% { transform: translate(-1px, -2px); }
+  50% { transform: translate(-2px, 1px); }
+  75% { transform: translate(2px, 0px); }
+  100% { transform: translate(1px, -1px); }
+}
+
+.animate-angry-shake {
+  animation: angry-shake 0.2s linear infinite;
+}
+
+/* Inactivity Bounce */
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 1s infinite;
+}
+
+/* Göz Parlaması */
+@keyframes pulse-eye {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.1); }
+}
+
+.animate-pulse {
+  animation: pulse-eye 1.5s ease-in-out infinite;
+}
+
+.no-select { user-select: none; }
+.drag-region { -webkit-app-region: drag; }
+/* Spe
+ech bubble animations */
+@keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(-10px);
@@ -82,493 +113,13 @@ body {
   }
 }
 
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
-}
-
-/* Idle floating animation */
-@keyframes idle-float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-.animate-idle-float {
-  animation: idle-float 3s ease-in-out infinite;
-}
-
-/* Clippy avatar base styling */
-.clippy-avatar {
-  filter: drop-shadow(0 4px 12px rgba(255, 102, 0, 0.3));
-  transition: filter 0.3s ease;
-  image-rendering: auto;
-  -webkit-user-drag: none;
-  user-select: none;
-}
-
-/* Angry state - red tint with intense glow */
-.clippy-angry {
-  filter: 
-    drop-shadow(0 0 20px rgba(255, 0, 0, 0.8))
-    drop-shadow(0 0 40px rgba(255, 0, 0, 0.5))
-    hue-rotate(-15deg)
-    brightness(1.2)
-    saturate(1.4);
-  animation: angry-pulse 0.8s ease-in-out infinite;
-}
-
-@keyframes angry-pulse {
-  0%, 100% {
-    filter: 
-      drop-shadow(0 0 20px rgba(255, 0, 0, 0.8))
-      drop-shadow(0 0 40px rgba(255, 0, 0, 0.5))
-      hue-rotate(-15deg)
-      brightness(1.2)
-      saturate(1.4);
-  }
-  50% {
-    filter: 
-      drop-shadow(0 0 30px rgba(255, 0, 0, 1))
-      drop-shadow(0 0 60px rgba(255, 0, 0, 0.7))
-      hue-rotate(-20deg)
-      brightness(1.3)
-      saturate(1.5);
-  }
-}
-
-/* Analyzing state - enhanced orange glow */
-.clippy-analyzing {
-  filter: 
-    drop-shadow(0 0 16px rgba(255, 102, 0, 0.7))
-    drop-shadow(0 0 32px rgba(255, 140, 0, 0.5))
-    brightness(1.15)
-    saturate(1.2);
-  animation: analyzing-glow 1.5s ease-in-out infinite;
-}
-
-@keyframes analyzing-glow {
-  0%, 100% {
-    filter: 
-      drop-shadow(0 0 16px rgba(255, 102, 0, 0.7))
-      drop-shadow(0 0 32px rgba(255, 140, 0, 0.5))
-      brightness(1.15)
-      saturate(1.2);
-  }
-  50% {
-    filter: 
-      drop-shadow(0 0 24px rgba(255, 102, 0, 0.9))
-      drop-shadow(0 0 48px rgba(255, 140, 0, 0.7))
-      brightness(1.25)
-      saturate(1.3);
-  }
-}
-
-/* Warning state - yellow tint */
-.clippy-warning {
-  filter: 
-    drop-shadow(0 0 12px rgba(255, 170, 0, 0.6))
-    hue-rotate(10deg)
-    brightness(1.1);
-}
-
-/* Subtle bounce for inactivity warning */
-@keyframes bounce-subtle {
-  0%, 100% {
+@keyframes fadeOut {
+  from {
+    opacity: 1;
     transform: translateY(0);
   }
-  50% {
-    transform: translateY(-15px);
-  }
-}
-
-.animate-bounce-subtle {
-  animation: bounce-subtle 0.6s ease-in-out infinite;
-}
-
-/* Eye glow pulse */
-@keyframes eye-glow {
-  0%, 100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-.animate-eye-glow {
-  animation: eye-glow 1s ease-in-out infinite;
-}
-
-/* Glitch overlay effect */
-@keyframes glitch-overlay {
-  0% {
-    transform: translate(0);
-    opacity: 0.8;
-  }
-  20% {
-    transform: translate(-2px, 2px);
-    opacity: 0.6;
-  }
-  40% {
-    transform: translate(2px, -2px);
-    opacity: 0.8;
-  }
-  60% {
-    transform: translate(-2px, -2px);
-    opacity: 0.5;
-  }
-  80% {
-    transform: translate(2px, 2px);
-    opacity: 0.7;
-  }
-  100% {
-    transform: translate(0);
-    opacity: 0.8;
-  }
-}
-
-.animate-glitch-overlay {
-  animation: glitch-overlay 0.3s infinite;
-}
-
-/* Full glitch effect with color channel offset */
-@keyframes glitch {
-  0% {
-    transform: translate(0);
-    filter: hue-rotate(0deg);
-  }
-  10% {
-    transform: translate(-5px, 2px);
-    filter: hue-rotate(90deg);
-  }
-  20% {
-    transform: translate(3px, -3px);
-    filter: hue-rotate(180deg);
-  }
-  30% {
-    transform: translate(-2px, -5px);
-    filter: hue-rotate(270deg);
-  }
-  40% {
-    transform: translate(4px, 1px);
-    filter: hue-rotate(0deg);
-  }
-  50% {
-    transform: translate(-3px, 4px);
-    filter: hue-rotate(90deg);
-  }
-  60% {
-    transform: translate(2px, -2px);
-    filter: hue-rotate(180deg);
-  }
-  70% {
-    transform: translate(-4px, 3px);
-    filter: hue-rotate(270deg);
-  }
-  80% {
-    transform: translate(3px, -4px);
-    filter: hue-rotate(0deg);
-  }
-  90% {
-    transform: translate(-2px, 2px);
-    filter: hue-rotate(90deg);
-  }
-  100% {
-    transform: translate(0);
-    filter: hue-rotate(0deg);
-  }
-}
-
-.animate-glitch {
-  animation: glitch 0.6s ease-in-out;
-}
-
-/* Shake animation - medium intensity */
-@keyframes shake-medium {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  10%, 30%, 50%, 70%, 90% {
-    transform: translateX(-8px);
-  }
-  20%, 40%, 60%, 80% {
-    transform: translateX(8px);
-  }
-}
-
-.animate-shake {
-  animation: shake-medium 0.45s ease-in-out;
-}
-
-/* Shake animation - high intensity */
-@keyframes shake-intense {
-  0%, 100% {
-    transform: translate(0, 0);
-  }
-  10% {
-    transform: translate(-12px, 2px);
-  }
-  20% {
-    transform: translate(12px, -2px);
-  }
-  30% {
-    transform: translate(-10px, -3px);
-  }
-  40% {
-    transform: translate(10px, 3px);
-  }
-  50% {
-    transform: translate(-8px, -2px);
-  }
-  60% {
-    transform: translate(8px, 2px);
-  }
-  70% {
-    transform: translate(-6px, -1px);
-  }
-  80% {
-    transform: translate(6px, 1px);
-  }
-  90% {
-    transform: translate(-3px, 0);
-  }
-}
-
-.animate-shake-intense {
-  animation: shake-intense 0.7s ease-in-out;
-}
-
-/* Red flash effect for high severity */
-@keyframes red-flash {
-  0%, 100% {
-    background-color: transparent;
-  }
-  50% {
-    background-color: rgba(255, 0, 0, 0.3);
-  }
-}
-
-.animate-red-flash {
-  animation: red-flash 0.3s ease-in-out;
-}
-
-/* Blinking cursor */
-@keyframes blink {
-  0%, 50% {
-    opacity: 1;
-  }
-  51%, 100% {
+  to {
     opacity: 0;
+    transform: translateY(10px);
   }
-}
-
-.animate-blink {
-  animation: blink 1s step-end infinite;
-}
-
-/* Win95 Dark Theme Bubble */
-.win95-bubble {
-  background: linear-gradient(135deg, var(--evil-black) 0%, var(--evil-dark) 100%);
-  border-style: solid;
-  border-width: 2px;
-  box-shadow: 
-    /* Outer glow */
-    0 0 20px var(--crt-glow),
-    /* Inner bevels */
-    inset -2px -2px 0 0 rgba(0, 0, 0, 0.8),
-    inset 2px 2px 0 0 rgba(139, 0, 0, 0.2),
-    /* Depth shadow */
-    3px 3px 0 rgba(0, 0, 0, 0.9),
-    6px 6px 12px rgba(0, 0, 0, 0.6);
-  position: relative;
-}
-
-/* Pixel-perfect borders */
-.win95-bubble::before {
-  content: '';
-  position: absolute;
-  top: -1px;
-  left: -1px;
-  right: -1px;
-  bottom: -1px;
-  background: linear-gradient(
-    to bottom,
-    rgba(139, 0, 0, 0.3) 0%,
-    transparent 2px,
-    transparent calc(100% - 2px),
-    rgba(0, 0, 0, 0.5) 100%
-  );
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* CRT glow effect for text */
-.crt-text-glow {
-  text-shadow: 
-    0 0 2px currentColor,
-    0 0 4px currentColor,
-    0 0 8px rgba(255, 0, 0, 0.3);
-}
-
-/* ============================================
-   SPOOKY CAPE STYLING FOR DARK CLIPPY
-   ============================================ */
-
-.spooky-cape {
-  position: absolute;
-  top: 15%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 140%;
-  height: 120%;
-  z-index: 0;
-  pointer-events: none;
-  
-  /* Cape shape using clip-path */
-  background: linear-gradient(
-    180deg,
-    rgba(255, 102, 0, 0.4) 0%,
-    rgba(255, 69, 0, 0.5) 30%,
-    rgba(255, 140, 0, 0.3) 60%,
-    rgba(255, 165, 0, 0.2) 100%
-  );
-  
-  clip-path: polygon(
-    45% 0%,
-    55% 0%,
-    60% 10%,
-    70% 20%,
-    80% 40%,
-    85% 60%,
-    90% 80%,
-    85% 100%,
-    50% 95%,
-    15% 100%,
-    10% 80%,
-    15% 60%,
-    20% 40%,
-    30% 20%,
-    40% 10%
-  );
-  
-  /* Neon glow effect */
-  filter: drop-shadow(0 0 8px rgba(255, 102, 0, 0.8))
-          drop-shadow(0 0 16px rgba(255, 69, 0, 0.6))
-          drop-shadow(0 0 24px rgba(255, 140, 0, 0.4));
-  
-  /* Flowing animation */
-  animation: capeFlow 4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite,
-             capeGlow 2s ease-in-out infinite alternate;
-}
-
-/* Cape flowing/waving animation */
-@keyframes capeFlow {
-  0%, 100% {
-    transform: translateX(-50%) rotate(0deg) scaleY(1);
-  }
-  25% {
-    transform: translateX(-48%) rotate(2deg) scaleY(1.02);
-  }
-  50% {
-    transform: translateX(-50%) rotate(0deg) scaleY(1);
-  }
-  75% {
-    transform: translateX(-52%) rotate(-2deg) scaleY(1.02);
-  }
-}
-
-/* Glow pulsing animation */
-@keyframes capeGlow {
-  0% {
-    filter: drop-shadow(0 0 8px rgba(255, 102, 0, 0.8))
-            drop-shadow(0 0 16px rgba(255, 69, 0, 0.6))
-            drop-shadow(0 0 24px rgba(255, 140, 0, 0.4));
-  }
-  100% {
-    filter: drop-shadow(0 0 12px rgba(255, 102, 0, 1))
-            drop-shadow(0 0 24px rgba(255, 69, 0, 0.8))
-            drop-shadow(0 0 36px rgba(255, 140, 0, 0.6));
-  }
-}
-
-/* Flame-like edge effect */
-.spooky-cape::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(255, 69, 0, 0.3) 50%,
-    rgba(255, 140, 0, 0.4) 100%
-  );
-  clip-path: inherit;
-  animation: flameFlicker 1.5s ease-in-out infinite;
-}
-
-/* Flame flickering effect */
-@keyframes flameFlicker {
-  0%, 100% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 0.9;
-  }
-}
-
-/* Enhanced glow for angry state */
-.animate-glow .spooky-cape {
-  animation: capeFlow 4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite,
-             capeGlowIntense 1s ease-in-out infinite alternate;
-}
-
-@keyframes capeGlowIntense {
-  0% {
-    filter: drop-shadow(0 0 16px rgba(255, 0, 0, 1))
-            drop-shadow(0 0 32px rgba(255, 69, 0, 0.9))
-            drop-shadow(0 0 48px rgba(255, 140, 0, 0.7));
-  }
-  100% {
-    filter: drop-shadow(0 0 24px rgba(255, 0, 0, 1))
-            drop-shadow(0 0 48px rgba(255, 69, 0, 1))
-            drop-shadow(0 0 64px rgba(255, 140, 0, 0.9));
-  }
-}
-
-/* Subtle shimmer effect */
-.spooky-cape::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 200%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 100%
-  );
-  animation: shimmer 3s linear infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
-}
-
-/* GPU acceleration for smooth performance */
-.spooky-cape,
-.spooky-cape::before,
-.spooky-cape::after {
-  will-change: transform, filter;
-  backface-visibility: hidden;
-  transform-style: preserve-3d;
 }

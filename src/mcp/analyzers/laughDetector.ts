@@ -228,3 +228,26 @@ export function shouldLaugh(metadata: LaughMetadata): boolean {
 export function shouldMock(metadata: LaughMetadata): boolean {
   return shouldLaugh(metadata);
 }
+
+/**
+ * Main function to detect if code should trigger laugh
+ * Returns result with shouldPlayLaugh flag
+ */
+export async function detectLaugh(filePath: string): Promise<{ shouldPlayLaugh: boolean; shouldPlayAlone: boolean }> {
+  try {
+    const fs = await import('fs');
+    const content = await fs.promises.readFile(filePath, 'utf-8');
+    const metadata = analyzeLaughPatterns(content);
+    const shouldPlayLaugh = shouldLaugh(metadata);
+    
+    return {
+      shouldPlayLaugh,
+      shouldPlayAlone: false, // Can be extended later
+    };
+  } catch (error) {
+    return {
+      shouldPlayLaugh: false,
+      shouldPlayAlone: false,
+    };
+  }
+}

@@ -1,7 +1,7 @@
 # Spec: Visual Effects System (Shake + Glitch)
 
 ## Purpose
-Define UI effects triggered by MCP events.
+Define UI effects triggered by AI-analyzed code severity.
 
 ## Effects
 
@@ -25,10 +25,15 @@ Effects:
 - brief red flash on UI
 
 ### 3. Sound Effects
-- Retro Windows XP/95 error sound
-- Played only once every 3 seconds (rate limiter)
+- Severity-based sounds (low/medium/high)
+- Throttled to prevent spam (300ms cooldown)
+- Preloaded for instant playback
 
 ### Deliverables
-- `effects/useShake.ts`
-- `effects/useGlitch.ts`
-- `sounds/error.wav`
+- `src/renderer/hooks/effects/useShake.ts`
+- `src/renderer/hooks/effects/useGlitch.ts`
+- `src/renderer/hooks/effects/useSound.ts`
+- `src/renderer/audio/AudioEngine.ts`
+- `public/sounds/low.mp3`
+- `public/sounds/medium.mp3`
+- `public/sounds/high.mp3`

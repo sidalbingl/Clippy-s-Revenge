@@ -1,47 +1,81 @@
-# Spec: MCP Server for Code Quality Monitoring
+# Spec: MCP Server for AI-Powered Code Monitoring
 
 ## Purpose
-Define the Model Context Protocol server that monitors a selected project directory and reports code-quality issues back to the Electron app.
+File watcher that monitors code changes and triggers Gemini AI analysis for real-time feedback.
 
-## Requirements
+## Architecture
 
-### 1. Directory Monitoring
-- Use `chokidar` to watch for:
-  - `file change`
-  - `file add`
-  - `file unlink`
-- Only monitor files ending with:
-  - `.js`, `.ts`, `.jsx`, `.tsx`, `.py`
+### 1. File Watching (Chokidar)
+Monitors:
+- File extensions: `.js`, `.ts`, `.jsx`, `.tsx`, `.py`
+- Events: `change`, `add`
+- Debounce: 500ms stabilization
+- Ignores: dotfiles, node_modules
 
-### 2. Tools Exposed via MCP
-#### Tool: analyze_code_quality(filePath)
-Returns:
+### 2. Analysis Pipeline
+```
+File Change Detected
+    ↓
+Smart Analyzer (src/mcp/analyzers/smartAnalyzer.ts)
+    ↓
+Check Cache (15 min TTL)
+    ↓
+Gemini 2.5 Flash Analysis
+    ├─ Severity: low/medium/high
+    ├─ Message: 2 sarcastic sentences
+    └─ Advice: Technical fix
+    ↓
+If Gemini Fails → Local Fallback
+    ↓
+Cache Result
+    ↓
+Send to Renderer via IPC
+```
+
+### 3. Gemini Integration
+**Service**: `src/mcp/services/geminiService.ts`
+- Model: `gemini-2.5-flash`
+- SDK: `@google/genai`
+- Prompt: Sarcastic code critic
+- Response: JSON with severity + message
+
+**Features**:
+- Response caching (15 min)
+- Rate limiting (10/min)
+- Automatic fallback
+- Error handling
+
+### 4. Event Structure
+```typescript
 {
-lines: number,
-complexityScore: number,
-containsConsoleLogs: boolean,
-containsMagicNumbers: boolean,
-insultSeverity: "low" | "medium" | "high"
+  type: "INSULT_TRIGGER",
+  severity: "low" | "medium" | "high",
+  filePath: string,
+  message: string,
+  emotion: "idle" | "annoyed" | "furious",
+  usedAI: boolean,
+  shouldLaugh?: boolean
 }
-### 3. Triggers
-On each file save:
-- run `analyze_code_quality`
-- map severity to UI reaction
-- send structured event to Electron:
-{
-type: "INSULT_TRIGGER",
-severity,
-filePath
-}
+```
 
-markdown
-Kodu kopyala
+### 5. Performance
+- **Async**: Non-blocking analysis
+- **Cached**: Reduces API calls
+- **Rate Limited**: Prevents quota exhaustion
+- **Fallback**: Always works even without AI
 
-### 4. Performance Constraints
-- Must run asynchronously.
-- Must not block the IDE.
-- Limit CPU usage.
+## Implementation Files
+- `src/mcp/index.ts` - Main watcher
+- `src/mcp/analyzers/smartAnalyzer.ts` - Gemini orchestrator
+- `src/mcp/analyzers/codeQualityAnalyzer.ts` - Local fallback
+- `src/mcp/services/geminiService.ts` - AI client
+- `src/mcp/services/cacheService.ts` - Response cache
+- `src/mcp/services/rateLimiter.ts` - Rate limiting
 
-### 5. Deliverables
-- `mcp/index.ts`
-- `mcp/analyzers/codeQualityAnalyzer.ts`
+## Configuration
+Environment variables (`.env`):
+```env
+GEMINI_API_KEY=your_key_here
+GEMINI_MAX_REQUESTS_PER_MINUTE=10
+GEMINI_CACHE_TTL_MINUTES=15
+```
