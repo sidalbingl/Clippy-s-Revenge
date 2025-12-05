@@ -5,7 +5,7 @@ This project showcases AI-powered code analysis with Gemini 2.5 Flash, built ent
 ## Project Overview
 Evil Clippy is an Electron app that monitors your code in real-time and provides sarcastic, AI-generated feedback with horror-themed visual effects.
 
-**Category**: Costume Contest  
+**Category**: Resurrection
 **Development Time**: ~40 hours with Kiro  
 **Kiro Contribution**: 81% of codebase (~3,500 lines)
 

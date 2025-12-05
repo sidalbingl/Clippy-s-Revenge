@@ -225,14 +225,14 @@ class AudioEngine {
       this.currentlyPlaying = audio;
       this.lastPlayTime = now;
       
-      // Stop after 10 seconds
+      // Stop after 9 seconds
       setTimeout(() => {
         if (this.currentlyPlaying === audio) {
           audio.pause();
           audio.currentTime = 0;
           this.currentlyPlaying = null;
         }
-      }, 10000);
+      }, 9000);
       
       console.log('[AudioEngine] Playing "where are you" (10s max) - user inactive');
     } catch (error) {

@@ -6,6 +6,7 @@ interface SpeechBubbleProps {
   message: string;
   emotion?: Emotion;
   isVisible?: boolean;
+  onTypingComplete?: () => void;
 }
 
 const EMOTION_STYLES = {
@@ -32,7 +33,8 @@ const EMOTION_STYLES = {
 export const SpeechBubble = ({ 
   message, 
   emotion = 'idle',
-  isVisible = true 
+  isVisible = true,
+  onTypingComplete
 }: SpeechBubbleProps) => {
   const [displayedText, setDisplayedText] = useState('');
   const [showBubble, setShowBubble] = useState(false);
@@ -58,6 +60,10 @@ export const SpeechBubble = ({
         } else {
           clearInterval(typingInterval);
           setIsTyping(false);
+          // Notify parent that typing is complete
+          if (onTypingComplete) {
+            onTypingComplete();
+          }
         }
       }, typingSpeed);
 
@@ -137,21 +143,21 @@ export const SpeechBubble = ({
         </p>
       </div>
 
-      {/* Pointer tail - pointing up to avatar */}
+      {/* Pointer tail - pointing left to avatar */}
       <svg
-        width="20"
-        height="12"
-        viewBox="0 0 20 12"
+        width="12"
+        height="20"
+        viewBox="0 0 12 20"
         style={{
           position: 'absolute',
-          top: '-10px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          filter: `drop-shadow(0 -2px 4px rgba(0, 0, 0, 0.6))`
+          left: '-10px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          filter: `drop-shadow(-2px 0 4px rgba(0, 0, 0, 0.6))`
         }}
       >
         <path
-          d="M 10,0 L 0,12 L 20,12 Z"
+          d="M 0,10 L 12,0 L 12,20 Z"
           fill={styles.bg}
           stroke={styles.border}
           strokeWidth="2"

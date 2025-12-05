@@ -10,8 +10,6 @@ export interface InsultEvent {
   filePath: string;
   message?: string;
   emotion?: Emotion;
-  shouldLaugh?: boolean;
-  laughReason?: string;
 }
 
 const INACTIVITY_TIMEOUT = 2 * 60 * 1000; // 2 minutes for "where are you" sound + message
@@ -40,7 +38,6 @@ export function useClippyState(enabled: boolean = true) {
   const [severity, setSeverity] = useState<Severity>('low');
   const [lastActivityTime, setLastActivityTime] = useState(Date.now());
   const [shouldPlayAlone, setShouldPlayAlone] = useState(false);
-  const [shouldPlayLaugh, setShouldPlayLaugh] = useState(false);
   const [emotionResetTimer, setEmotionResetTimer] = useState<NodeJS.Timeout | null>(null);
 
   const updateState = useCallback((
@@ -64,12 +61,12 @@ export function useClippyState(enabled: boolean = true) {
     const checkInactivity = setInterval(() => {
       const timeSinceActivity = Date.now() - lastActivityTime;
 
-      // Stage 1: Play "where are you" sound + show light message after 2 minutes
+      // Stage 1: Play "where are you" sound + show light message after 2 minutes (only once)
       if (timeSinceActivity >= INACTIVITY_TIMEOUT && timeSinceActivity < INACTIVITY_TIMEOUT + 30000) {
-        if (!shouldPlayAlone && state !== 'inactivity_warning') {
-          setShouldPlayAlone(true);
+        if (state !== 'inactivity_warning') {
           const randomMessage = INACTIVITY_MESSAGES_SHORT[Math.floor(Math.random() * INACTIVITY_MESSAGES_SHORT.length)];
           updateState('inactivity_warning', randomMessage, 'idle', 'low');
+          setShouldPlayAlone(true); // Set AFTER updateState so it doesn't get reset
           console.log('[Clippy] User inactive for 2 minutes - playing sound + showing message');
         }
       }
@@ -133,21 +130,7 @@ export function useClippyState(enabled: boolean = true) {
 
         const newState = stateMap[eventSeverity] || 'idle';
 
-        // Handle laugh mode (INDEPENDENT from severity)
-        console.log(`[Clippy] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-        console.log(`[Clippy] 📥 Received event:`);
-        console.log(`[Clippy]    Severity: ${eventSeverity}`);
-        console.log(`[Clippy]    shouldLaugh: ${data.shouldLaugh}`);
-        console.log(`[Clippy]    laughReason: ${data.laughReason || 'none'}`);
-
-        if (data.shouldLaugh) {
-          setShouldPlayLaugh(true);
-          console.log(`[Clippy] 😈 ACTIVATING LAUGH MODE!`);
-        } else {
-          setShouldPlayLaugh(false);
-          console.log(`[Clippy] 🔇 No laugh mode`);
-        }
-        console.log(`[Clippy] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+        console.log(`[Clippy] 📥 Received event: ${eventSeverity}`);
 
         updateState(newState, displayMessage, displayEmotion, eventSeverity);
 
@@ -207,7 +190,6 @@ export function useClippyState(enabled: boolean = true) {
     emotion,
     severity,
     shouldPlayAlone,
-    shouldPlayLaugh,
     updateState,
     triggerManualMessage,
   };

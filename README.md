@@ -140,19 +140,26 @@ If Gemini fails (API down, rate limit, no key):
 - **Red Flash**: Brief red overlay for high severity
 - **Audio**: Severity-based sound effects
 
-### Laugh Detection
-Triggers special laugh animation for embarrassing patterns:
-- Silly variable names (a, b, c, temp1, lol)
-- Beginner mistakes (if(true), comparing to self)
-- Meme variables (wtf, yolo, lmao)
-- Console.log spam (10+ instances)
+### Scary Laugh (HIGH Severity Only)
+Evil Clippy's signature scary laugh plays automatically for HIGH severity errors (no other sound):
+- Security vulnerabilities (eval, SQL injection)
+- Critical bugs that could crash the app
+- Data loss risks
+- Unsafe code patterns
+- Triggers: Shake + Glitch + Red Flash + Scary Laugh
 
-### Easter Egg 🥚
+### Easter Eggs 🥚
+
+**Click Avatar:**
 Click on Clippy's avatar repeatedly for increasingly creepy messages:
 - 1st click: "Stop poking me, mortal... 👁️"
-- 5th click: Triggers shake effect + "I know what you did in that last commit... 💀"
-- 10th click: Full glitch effect + evil laugh + "Fine. You win. But I'm still judging you... 😒"
+- 5th click: Shake effect + "I know what you did in that last commit... 💀"
+- 10th click: Glitch effect + evil laugh + "Fine. You win. But I'm still judging you... 😒"
 - Each click within 2 seconds continues the sequence, otherwise resets
+
+**Inactivity Warning:**
+- After 2 minutes: "Where are you" sound (9 seconds) + shake + light message
+- After 5 minutes: Harsher message with annoyed emotion
 
 ## Setup
 
@@ -189,7 +196,32 @@ This starts:
 3. File watcher on current directory
 4. Gemini API integration
 
-### 5. Build for Production
+### 5. Test Evil Clippy
+
+Use the included test files to trigger different severity levels:
+
+**LOW Severity** (`test-low-severity.js`):
+- Console.log spam
+- Magic numbers
+- Inconsistent naming
+- Missing error handling
+
+**MEDIUM Severity** (`test-bad-css.css`):
+- Nested selectors
+- !important overuse
+- Duplicate properties
+
+**HIGH Severity** (`test-high-severity.js`):
+- eval() usage
+- SQL injection vulnerability
+- Unsafe innerHTML
+- Effects: Shake + Glitch + Red Flash + **Scary Laugh** 😈
+
+Simply edit and save any test file to see Clippy's reaction!
+
+**Note:** Clippy moves to center when showing a message, then resumes floating motion after typing completes (message stays visible while moving).
+
+### 6. Build for Production
 ```bash
 npm run build
 npm start
@@ -213,13 +245,16 @@ Edit `src/mcp/services/geminiService.ts` → `buildPrompt()` method:
 - Add custom examples
 - Modify severity rules
 
-## Performance
+## Performance & Features
 
 - **Async Analysis**: Non-blocking file analysis
-- **Smart Caching**: 15-minute cache reduces API calls
+- **Smart Caching**: 15-minute cache reduces API calls (80% hit rate)
 - **Rate Limiting**: 10 requests/minute prevents quota exhaustion
-- **GPU Animations**: CSS-based effects for smooth performance
+- **GPU Animations**: CSS-based effects for 60fps performance
 - **Debounced Watching**: 500ms stabilization prevents spam
+- **Speech Bubble**: Positioned next to avatar with typing animation
+- **Floating Motion**: Physics-based movement with pause/resume
+- **Click-through**: Window becomes transparent when not interacting
 
 ## Troubleshooting
 

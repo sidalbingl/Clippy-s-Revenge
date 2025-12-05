@@ -1,7 +1,6 @@
 import * as chokidar from 'chokidar';
 import * as path from 'path';
 import { smartAnalyzer } from './analyzers/smartAnalyzer';
-import { detectLaugh } from './analyzers/laughDetector';
 import * as dotenv from 'dotenv';
 
 // Load environment variables - override system env vars
@@ -13,8 +12,6 @@ export interface MCPEvent {
   filePath: string;
   message: string;
   emotion: 'idle' | 'annoyed' | 'furious';
-  shouldLaugh?: boolean;
-  laughReason?: string;
   usedAI?: boolean;
   reason?: string;
 }
@@ -132,8 +129,6 @@ export class MCPWatcher {
     try {
       console.log(`[MCP] Analyzing: ${filePath}`);
 
-      const laughResult = await detectLaugh(filePath);
-
       // Directly analyze with Gemini (no quick analysis)
       const result = await smartAnalyzer.analyze(filePath);
 
@@ -146,8 +141,6 @@ export class MCPWatcher {
           filePath,
           message: result.message,
           emotion: result.emotion,
-          shouldLaugh: laughResult.shouldPlayLaugh,
-          laughReason: laughResult.shouldPlayLaugh ? 'Embarrassing code detected' : undefined,
           usedAI: result.usedAI,
           reason: result.reason,
         };

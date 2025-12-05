@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Avatar, AvatarRef } from './components/Avatar';
 import { SpeechBubble } from './components/SpeechBubble';
-import { HighSeverityOverlay } from './components/HighSeverityOverlay';
 import { WelcomeDashboard, DashboardSettings } from './components/WelcomeDashboard';
 import { useClippyState } from './hooks/useClippyState';
 import { useShake } from './hooks/effects/useShake';
@@ -85,10 +84,8 @@ function App() {
   const { playSound, playLaugh, playAlone, setMuted } = useAudio();
 
   // Avatar state (only when started)
-  const { state, message, emotion, severity, shouldPlayAlone, shouldPlayLaugh, triggerManualMessage } = useClippyState(clippyStarted);
+  const { state, message, emotion, severity, shouldPlayAlone, triggerManualMessage } = useClippyState(clippyStarted);
   const [manualPosition, setManualPosition] = useState<{ x: number; y: number } | null>(null);
-  const [cinematicActive, setCinematicActive] = useState(false);
-  const [startDarkening, setStartDarkening] = useState(false);
   const [motionPaused, setMotionPaused] = useState(false);
   const [avatarClickCount, setAvatarClickCount] = useState(0);
   const dragStartRef = useRef({ x: 0, y: 0 });
@@ -116,74 +113,28 @@ function App() {
 
   const position = showingMessage ? centerPosition : (manualPosition || autoPosition);
 
-  // Move to center when message appears, then resume motion
+  // Move to center when message appears
   useEffect(() => {
     if (message && message.trim() !== '') {
       console.log('[App] Message detected, moving to center');
       setShowingMessage(true);
       setMotionPaused(true);
-
-      // Clear existing timeout
-      if (messageTimeoutRef.current) {
-        clearTimeout(messageTimeoutRef.current);
-      }
-
-      // Resume motion after 5 seconds (but message stays visible)
-      messageTimeoutRef.current = setTimeout(() => {
-        console.log('[App] Resuming motion, message still visible');
-        setShowingMessage(false);
-        setMotionPaused(false);
-      }, 5000);
+    } else {
+      // Message disappeared, resume motion
+      console.log('[App] Message cleared, resuming motion');
+      setShowingMessage(false);
+      setMotionPaused(false);
     }
-
-    return () => {
-      if (messageTimeoutRef.current) {
-        clearTimeout(messageTimeoutRef.current);
-      }
-    };
   }, [message]);
 
-  // HIGH SEVERITY CINEMATIC SEQUENCE - PROFESSIONAL HORROR
-  const triggerHighSeverityCinematic = async () => {
-    console.log('[Cinematic] 🎬 Starting cinematic sequence...');
-    setCinematicActive(true);
-    setMotionPaused(true);
-    setStartDarkening(false);
-
-    // STEP 1: Fly to center slowly (1200ms)
-    console.log('[Cinematic] ✈️ Moving to center...');
-    const centerX = window.innerWidth / 2 - 88;
-    const centerY = window.innerHeight / 2 - 104;
-    setManualPosition({ x: centerX, y: centerY });
-    await new Promise(resolve => setTimeout(resolve, 1200));
-
-    // STEP 2: Eyes closing + vignette darkening (2500ms) - SYNCHRONIZED
-    console.log('[Cinematic] 😑 Eyes closing... darkness creeping in...');
-    avatarRef.current?.closeEyes();
-    setStartDarkening(true);
-    await new Promise(resolve => setTimeout(resolve, 2500));
-
-    // STEP 3: Brief pause in darkness (500ms)
-    console.log('[Cinematic] 🌑 Complete darkness...');
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // STEP 4: Eyes snap open - GLITCH HELL!
-    console.log('[Cinematic] 👁️ EYES OPEN! ⚡ SYSTEM MALFUNCTION!');
-    avatarRef.current?.openEyes();
+  // Handle typing complete - resume motion while message is still visible
+  const handleTypingComplete = () => {
+    console.log('[App] Typing complete, resuming motion');
+    setShowingMessage(false);
+    setMotionPaused(false);
   };
 
-  const handleCinematicComplete = () => {
-    console.log('[Cinematic] Complete!');
-    setCinematicActive(false);
-    setStartDarkening(false);
 
-    // Clear manual position and resume motion after a brief delay
-    setTimeout(() => {
-      setManualPosition(null);
-      setMotionPaused(false);
-      console.log('[Cinematic] Resuming normal motion');
-    }, 500);
-  };
 
   const handleAvatarClick = () => {
     const now = Date.now();
@@ -233,9 +184,6 @@ function App() {
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Disable drag during cinematic
-    if (cinematicActive) return;
-
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
     setIsDragging(true);
@@ -285,10 +233,10 @@ function App() {
 
     try {
       if (severity === 'high') {
-        // Trigger HIGH SEVERITY cinematic sequence
-        triggerHighSeverityCinematic();
-        playSound(severity);
+        // Trigger HIGH SEVERITY effects + SCARY LAUGH ONLY (no cinematic)
+        triggerShake('high');
         triggerGlitch();
+        playLaugh(); // Only scary laugh for HIGH severity
       } else if (severity === 'medium') {
         triggerShake('medium');
         playSound(severity);
@@ -298,15 +246,15 @@ function App() {
     } catch (error) {
       console.error('[App] Error triggering effects:', error);
     }
-  }, [severity, triggerShake, triggerGlitch, playSound]);
+  }, [severity, triggerShake, triggerGlitch, playSound, playLaugh]);
 
   useEffect(() => {
-    if (shouldPlayLaugh) playLaugh();
-  }, [shouldPlayLaugh, playLaugh]);
-
-  useEffect(() => {
-    if (shouldPlayAlone) playAlone();
-  }, [shouldPlayAlone, playAlone]);
+    if (shouldPlayAlone) {
+      console.log('[App] Playing alone sound + shake');
+      playAlone();
+      triggerShake('medium');
+    }
+  }, [shouldPlayAlone, playAlone, triggerShake]);
 
   return (
     <div
@@ -410,18 +358,16 @@ function App() {
               top: `${position.y}px`,
               pointerEvents: 'auto',
               zIndex: 9999,
-              transition: cinematicActive
-                ? 'left 1200ms cubic-bezier(0.16, 1, 0.3, 1), top 1200ms cubic-bezier(0.16, 1, 0.3, 1)'
-                : showingMessage
-                  ? 'left 600ms ease-out, top 600ms ease-out'
-                  : 'none'
+              transition: showingMessage
+                ? 'left 600ms ease-out, top 600ms ease-out'
+                : 'none'
             }}
           >
             <div
               onMouseDown={handleMouseDown}
               style={{
                 position: 'relative',
-                cursor: cinematicActive ? 'default' : (isDragging ? 'grabbing' : 'grab'),
+                cursor: isDragging ? 'grabbing' : 'grab',
                 userSelect: 'none',
                 transform: 'scale(0.7)',
                 transformOrigin: 'top left'
@@ -434,22 +380,21 @@ function App() {
               className={shakeClass}
               style={{
                 position: 'absolute',
-                // Smart positioning based on screen position
-                ...(position.x < window.innerWidth / 2
-                  ? { left: '100%', marginLeft: '12px' } // Left side - bubble on right
-                  : { right: '100%', marginRight: '12px' }), // Right side - bubble on left
-                ...(position.y < window.innerHeight / 2
-                  ? { top: '0' } // Top half - bubble aligned to top
-                  : { bottom: '0' }), // Bottom half - bubble aligned to bottom
+                left: '180px', // Right next to avatar (176px width * 0.7 scale = 123px, + some margin)
+                top: '20px', // Aligned with avatar's middle
                 pointerEvents: 'auto',
                 zIndex: 10
               }}
             >
-              <SpeechBubble message={message} emotion={emotion} />
+              <SpeechBubble
+                message={message}
+                emotion={emotion}
+                onTypingComplete={handleTypingComplete}
+              />
             </div>
           </div>
 
-          {severity === 'high' && !cinematicActive && (
+          {severity === 'high' && (
             <div
               style={{
                 position: 'fixed',
@@ -460,12 +405,6 @@ function App() {
               className="animate-red-flash"
             />
           )}
-
-          <HighSeverityOverlay
-            isActive={cinematicActive}
-            startEffect={startDarkening}
-            onComplete={handleCinematicComplete}
-          />
         </>
       )}
     </div>
