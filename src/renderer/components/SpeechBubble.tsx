@@ -67,7 +67,7 @@ export const SpeechBubble = ({
         }
       }, typingSpeed);
 
-      const displayDuration = emotion === 'furious' ? 8000 : emotion === 'annoyed' ? 10000 : 12000;
+      const displayDuration = emotion === 'furious' ? 20000 : emotion === 'annoyed' ? 20000 : 20000; // 20 seconds for screenshots
       
       const hideTimeout = setTimeout(() => {
         setIsFadingOut(true);
