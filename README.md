@@ -200,18 +200,18 @@ This starts:
 
 Use the included test files to trigger different severity levels:
 
-**LOW Severity** (`test-low-severity.js`):
+**LOW Severity**
 - Console.log spam
 - Magic numbers
 - Inconsistent naming
 - Missing error handling
 
-**MEDIUM Severity** (`test-bad-css.css`):
+**MEDIUM Severity** 
 - Nested selectors
 - !important overuse
 - Duplicate properties
 
-**HIGH Severity** (`test-high-severity.js`):
+**HIGH Severity** 
 - eval() usage
 - SQL injection vulnerability
 - Unsafe innerHTML
