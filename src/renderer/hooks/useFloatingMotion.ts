@@ -14,7 +14,7 @@ interface ClippyMotionConfig {
   pauseDuration?: number;
 }
 
-type MovementMode = 'normal' | 'dash' | 'lurk' | 'swoop';
+type MovementMode = 'normal' | 'dash' | 'lurk' | 'swoop' | 'avoid';
 
 export const useFloatingMotion = (config: ClippyMotionConfig = {}) => {
   const {
@@ -36,27 +36,25 @@ export const useFloatingMotion = (config: ClippyMotionConfig = {}) => {
   const isPausedRef = useRef<boolean>(false);
   const pauseStartRef = useRef<number>(0);
   const movementModeRef = useRef<MovementMode>('normal');
+  const mousePositionRef = useRef<Position>({ x: 0, y: 0 });
+  const lastAvoidTimeRef = useRef<number>(0);
 
-  const getRandomPosition = (): Position => {
-    const pad = padding || 50;
-    return {
-      x: pad + Math.random() * (window.innerWidth - pad * 2),
-      y: pad + Math.random() * (window.innerHeight - pad * 2)
-    };
+  const getCornerPosition = (): Position => {
+    const pad = 20; // Small padding from edges
+    const avatarWidth = 176 * 0.7; // Avatar width * scale
+    const avatarHeight = 208 * 0.7; // Avatar height * scale
+
+    const corners = [
+      { x: pad, y: pad }, // Top-left
+      { x: window.innerWidth - avatarWidth - pad, y: pad }, // Top-right
+      { x: pad, y: window.innerHeight - avatarHeight - pad }, // Bottom-left
+      { x: window.innerWidth - avatarWidth - pad, y: window.innerHeight - avatarHeight - pad }, // Bottom-right
+    ];
+
+    return corners[Math.floor(Math.random() * corners.length)];
   };
 
-  const getEdgePosition = (): Position => {
-    const edge = Math.floor(Math.random() * 4);
-    const pad = padding || 50;
 
-    switch (edge) {
-      case 0: return { x: pad, y: pad + Math.random() * (window.innerHeight - pad * 2) };
-      case 1: return { x: window.innerWidth - pad, y: pad + Math.random() * (window.innerHeight - pad * 2) };
-      case 2: return { x: pad + Math.random() * (window.innerWidth - pad * 2), y: pad };
-      case 3: return { x: pad + Math.random() * (window.innerWidth - pad * 2), y: window.innerHeight - pad };
-      default: return getRandomPosition();
-    }
-  };
 
   const easeInOutSine = (t: number): number => {
     return -(Math.cos(Math.PI * t) - 1) / 2;
@@ -82,13 +80,7 @@ export const useFloatingMotion = (config: ClippyMotionConfig = {}) => {
     return Math.sin(time * 0.003) * 5;
   };
 
-  const chooseMovementMode = (): MovementMode => {
-    const rand = Math.random();
-    if (rand < 0.15) return 'dash';
-    if (rand < 0.25) return 'lurk';
-    if (rand < 0.35) return 'swoop';
-    return 'normal';
-  };
+
 
   const animate = (timestamp: number) => {
     if (!enabled) return;
@@ -117,29 +109,15 @@ export const useFloatingMotion = (config: ClippyMotionConfig = {}) => {
     const elapsed = timestamp - startTimeRef.current;
     const progress = Math.min(elapsed / durationRef.current, 1);
 
-    let easedProgress: number;
-    const mode = movementModeRef.current;
-
-    switch (mode) {
-      case 'dash':
-        easedProgress = easeInQuad(progress);
-        break;
-      case 'lurk':
-        easedProgress = easeOutQuad(progress);
-        break;
-      case 'swoop':
-        easedProgress = easeInOutBack(progress);
-        break;
-      default:
-        easedProgress = easeInOutSine(progress);
-    }
+    // Simple smooth easing
+    const easedProgress = easeInOutSine(progress);
 
     const currentX = startPosRef.current.x +
       (targetPosRef.current.x - startPosRef.current.x) * easedProgress;
     const currentY = startPosRef.current.y +
       (targetPosRef.current.y - startPosRef.current.y) * easedProgress;
 
-    const bobbing = mode === 'dash' ? 0 : getHoverBobbing(timestamp);
+    const bobbing = getHoverBobbing(timestamp);
 
     setPosition({
       x: currentX,
@@ -149,34 +127,14 @@ export const useFloatingMotion = (config: ClippyMotionConfig = {}) => {
     if (progress >= 1) {
       startPosRef.current = { x: currentX, y: currentY };
 
-      if (Math.random() < pauseChance) {
-        isPausedRef.current = true;
-        pauseStartRef.current = timestamp;
-        setIsMoving(false);
-      } else {
-        movementModeRef.current = chooseMovementMode();
+      // Always pause at corners
+      isPausedRef.current = true;
+      pauseStartRef.current = timestamp;
+      setIsMoving(false);
 
-        if (movementModeRef.current === 'dash') {
-          targetPosRef.current = getRandomPosition();
-          durationRef.current = 800 + Math.random() * 600;
-        } else if (movementModeRef.current === 'lurk') {
-          targetPosRef.current = getEdgePosition();
-          durationRef.current = 5000 + Math.random() * 3000;
-        } else if (movementModeRef.current === 'swoop') {
-          const centerX = window.innerWidth / 2;
-          const centerY = window.innerHeight / 2;
-          targetPosRef.current = {
-            x: centerX + (Math.random() - 0.5) * 400,
-            y: centerY + (Math.random() - 0.5) * 400
-          };
-          durationRef.current = 2000 + Math.random() * 1500;
-        } else {
-          targetPosRef.current = getRandomPosition();
-          durationRef.current = minDuration + Math.random() * (maxDuration - minDuration);
-        }
-
-        startTimeRef.current = timestamp;
-      }
+      // Next target is another corner
+      targetPosRef.current = getCornerPosition();
+      durationRef.current = 4000 + Math.random() * 3000; // Slow movement
     }
 
     animationRef.current = requestAnimationFrame(animate);
@@ -185,9 +143,9 @@ export const useFloatingMotion = (config: ClippyMotionConfig = {}) => {
   useEffect(() => {
     if (!enabled) return;
 
-    const initialPos = getRandomPosition();
+    const initialPos = getCornerPosition();
     startPosRef.current = initialPos;
-    targetPosRef.current = getRandomPosition();
+    targetPosRef.current = getCornerPosition();
     setPosition(initialPos);
 
     animationRef.current = requestAnimationFrame(animate);

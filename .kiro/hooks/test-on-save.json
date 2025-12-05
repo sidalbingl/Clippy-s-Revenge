@@ -1,0 +1,8 @@
+{
+  "name": "Run Tests on Save",
+  "description": "Automatically run tests for modified files to catch bugs immediately",
+  "trigger": "onSave",
+  "filePattern": "src/**/*.{ts,tsx,js,jsx}",
+  "command": "npm test -- --related ${file} --passWithNoTests",
+  "enabled": true
+}

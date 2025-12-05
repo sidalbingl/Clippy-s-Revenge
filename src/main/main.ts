@@ -1,7 +1,8 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
-import { MCPWatcher } from '../mcp';
+import { MCPWatcher, WatcherConfig } from '../mcp';
+import { statisticsStore } from './StatisticsStore';
 
 // Load environment variables - override system env vars
 dotenv.config({ override: true });
@@ -40,30 +41,31 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
 
-  // Initially ignore mouse events, renderer will control this
-  mainWindow.setIgnoreMouseEvents(true, { forward: true });
+  // Initially do NOT ignore mouse events - dashboard needs to be interactive
+  mainWindow.setIgnoreMouseEvents(false);
 
-  // Listen for mouse enter/leave events from renderer
-  mainWindow.webContents.on('cursor-changed', (event, type) => {
-    if (type === 'default' || type === 'pointer') {
-      mainWindow?.setIgnoreMouseEvents(true, { forward: true });
-    } else {
-      mainWindow?.setIgnoreMouseEvents(false);
-    }
-  });
+  // Renderer will control click-through via IPC (set-clickthrough handler)
 }
 
-function startMCPWatcher(watchPath: string) {
+function startMCPWatcher(config: WatcherConfig) {
   try {
     if (mcpWatcher) {
       console.log('[Main] Stopping existing watcher');
       mcpWatcher.stop();
     }
 
-    console.log('[Main] Starting MCP watcher for:', watchPath);
-    mcpWatcher = new MCPWatcher(watchPath);
+    console.log('[Main] Starting MCP watcher with config:', config);
+    mcpWatcher = new MCPWatcher(config);
     
     mcpWatcher.start((event) => {
+      // Store statistics
+      statisticsStore.addAnalysis({
+        filePath: event.filePath,
+        severity: event.severity,
+        message: event.message,
+        timestamp: Date.now(),
+      });
+      
       // Forward MCP events to renderer with error handling
       if (mainWindow && !mainWindow.isDestroyed()) {
         console.log('[Main] Forwarding event to renderer:', event.severity);
@@ -84,12 +86,8 @@ function startMCPWatcher(watchPath: string) {
 app.whenReady().then(() => {
   createWindow();
   
-  // Auto-start watching current directory in development
-  if (process.env.NODE_ENV === 'development') {
-    const watchPath = process.cwd();
-    console.log('[MCP] Auto-starting watcher for:', watchPath);
-    startMCPWatcher(watchPath);
-  }
+  // DO NOT auto-start watcher - wait for user to select folder from dashboard
+  console.log('[Main] Waiting for user to select folder from dashboard...');
 });
 
 app.on('window-all-closed', () => {
@@ -116,18 +114,64 @@ ipcMain.handle('trigger-insult', async (_event, data) => {
 });
 
 ipcMain.handle('select-watch-directory', async () => {
-  const result = await dialog.showOpenDialog({
+  // Temporarily disable alwaysOnTop for dialog
+  if (mainWindow) {
+    mainWindow.setAlwaysOnTop(false);
+  }
+
+  const result = await dialog.showOpenDialog(mainWindow!, {
     properties: ['openDirectory'],
     title: 'Select Directory to Watch',
   });
 
+  // Re-enable alwaysOnTop after dialog closes
+  if (mainWindow) {
+    mainWindow.setAlwaysOnTop(true);
+  }
+
   if (!result.canceled && result.filePaths.length > 0) {
     const selectedPath = result.filePaths[0];
-    startMCPWatcher(selectedPath);
     return { success: true, path: selectedPath };
   }
 
   return { success: false };
+});
+
+ipcMain.handle('select-watch-files', async () => {
+  // Temporarily disable alwaysOnTop for dialog
+  if (mainWindow) {
+    mainWindow.setAlwaysOnTop(false);
+  }
+
+  const result = await dialog.showOpenDialog(mainWindow!, {
+    properties: ['openFile', 'multiSelections'],
+    title: 'Select Files to Watch',
+    filters: [
+      { name: 'Code Files', extensions: ['js', 'ts', 'jsx', 'tsx', 'py', 'css', 'html', 'json', 'yml', 'yaml', 'md', 'glsl', 'shader'] },
+      { name: 'All Files', extensions: ['*'] }
+    ]
+  });
+
+  // Re-enable alwaysOnTop after dialog closes
+  if (mainWindow) {
+    mainWindow.setAlwaysOnTop(true);
+  }
+
+  if (!result.canceled && result.filePaths.length > 0) {
+    return { success: true, paths: result.filePaths };
+  }
+
+  return { success: false };
+});
+
+ipcMain.handle('start-watcher', async (_event, config: WatcherConfig) => {
+  try {
+    startMCPWatcher(config);
+    return { success: true };
+  } catch (error) {
+    console.error('[Main] Error starting watcher:', error);
+    return { success: false, error: String(error) };
+  }
 });
 
 ipcMain.handle('stop-watcher', async () => {
@@ -137,4 +181,56 @@ ipcMain.handle('stop-watcher', async () => {
     return { success: true };
   }
   return { success: false };
+});
+
+ipcMain.handle('set-clickthrough', async (_event, enabled: boolean) => {
+  if (mainWindow) {
+    mainWindow.setIgnoreMouseEvents(enabled, { forward: true });
+    return { success: true };
+  }
+  return { success: false };
+});
+
+ipcMain.handle('minimize-window', async () => {
+  if (mainWindow) {
+    mainWindow.minimize();
+    return { success: true };
+  }
+  return { success: false };
+});
+
+ipcMain.handle('hide-window', async () => {
+  if (mainWindow) {
+    mainWindow.hide();
+    return { success: true };
+  }
+  return { success: false };
+});
+
+ipcMain.handle('quit-app', async () => {
+  if (mcpWatcher) {
+    mcpWatcher.stop();
+  }
+  app.quit();
+  return { success: true };
+});
+
+ipcMain.handle('get-statistics', async () => {
+  try {
+    const stats = statisticsStore.getStatistics();
+    return { success: true, statistics: stats };
+  } catch (error) {
+    console.error('[Main] Error getting statistics:', error);
+    return { success: false, error: String(error) };
+  }
+});
+
+ipcMain.handle('reset-statistics', async () => {
+  try {
+    statisticsStore.reset();
+    return { success: true };
+  } catch (error) {
+    console.error('[Main] Error resetting statistics:', error);
+    return { success: false, error: String(error) };
+  }
 });

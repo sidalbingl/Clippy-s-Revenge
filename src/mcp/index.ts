@@ -21,14 +21,21 @@ export interface MCPEvent {
 
 type EventCallback = (event: MCPEvent) => void;
 
+export interface WatcherConfig {
+  folders: string[];
+  files?: string[]; // Individual files to watch
+  fileTypes: string[]; // e.g., ['.js', '.ts', '.jsx']
+  watchSubfolders: boolean;
+}
+
 export class MCPWatcher {
   private watcher: chokidar.FSWatcher | null = null;
   private eventCallback: EventCallback | null = null;
-  private watchPath: string;
+  private config: WatcherConfig;
   private isProcessing = false;
 
-  constructor(watchPath: string) {
-    this.watchPath = watchPath;
+  constructor(config: WatcherConfig) {
+    this.config = config;
   }
 
   start(callback: EventCallback) {
@@ -37,7 +44,7 @@ export class MCPWatcher {
     // Initialize Gemini if API key is available
     const geminiApiKey = process.env.GEMINI_API_KEY;
     console.log('[MCP] API Key from env:', geminiApiKey ? geminiApiKey.substring(0, 15) + '...' : 'Not found');
-    
+
     if (geminiApiKey) {
       smartAnalyzer.initializeGemini(geminiApiKey);
       console.log('[MCP] Gemini initialized');
@@ -45,10 +52,30 @@ export class MCPWatcher {
       console.log('[MCP] No Gemini API key found, using local analysis only');
     }
 
-    this.watcher = chokidar.watch(this.watchPath, {
-      ignored: /(^|[\/\\])\../, // ignore dotfiles
+    // Build ignore patterns
+    const ignorePatterns = [
+      /(^|[\/\\])\../, // dotfiles
+      /node_modules/,
+      /\.git/,
+      /dist/,
+      /build/,
+      /coverage/,
+      /\.next/,
+      /\.nuxt/,
+    ];
+
+    // Combine folders and individual files
+    const watchPaths = [
+      ...this.config.folders,
+      ...(this.config.files || [])
+    ];
+
+    // Watch multiple folders and files
+    this.watcher = chokidar.watch(watchPaths, {
+      ignored: ignorePatterns,
       persistent: true,
       ignoreInitial: true,
+      depth: this.config.watchSubfolders ? undefined : 0,
       awaitWriteFinish: {
         stabilityThreshold: 500,
         pollInterval: 100,
@@ -69,7 +96,9 @@ export class MCPWatcher {
       }
     });
 
-    console.log(`[MCP] Watching directory: ${this.watchPath}`);
+    console.log(`[MCP] Watching ${this.config.folders.length} folder(s) and ${(this.config.files || []).length} file(s)`);
+    console.log(`[MCP] File types: ${this.config.fileTypes.join(', ')}`);
+    console.log(`[MCP] Subfolders: ${this.config.watchSubfolders ? 'Yes' : 'No'}`);
   }
 
   stop() {
@@ -81,8 +110,14 @@ export class MCPWatcher {
   }
 
   private shouldAnalyze(filePath: string): boolean {
+    // If it's a directly watched file, always analyze it
+    if (this.config.files && this.config.files.includes(filePath)) {
+      return true;
+    }
+    
+    // Otherwise check file type
     const ext = path.extname(filePath);
-    return ['.js', '.ts', '.jsx', '.tsx', '.py'].includes(ext);
+    return this.config.fileTypes.includes(ext);
   }
 
   private async handleFileChange(filePath: string) {
@@ -91,19 +126,19 @@ export class MCPWatcher {
       console.log(`[MCP] Skipping ${filePath} - already processing`);
       return;
     }
-    
+
     this.isProcessing = true;
 
     try {
       console.log(`[MCP] Analyzing: ${filePath}`);
-      
+
       const laughResult = await detectLaugh(filePath);
 
       // Directly analyze with Gemini (no quick analysis)
       const result = await smartAnalyzer.analyze(filePath);
-      
+
       console.log(`[MCP] Analysis complete: ${result.severity} (AI: ${result.usedAI})`);
-      
+
       if (this.eventCallback) {
         const event: MCPEvent = {
           type: 'INSULT_TRIGGER',
@@ -120,7 +155,7 @@ export class MCPWatcher {
       }
     } catch (error) {
       console.error('[MCP] Error analyzing file:', error);
-      
+
       // Send fallback event on error
       if (this.eventCallback) {
         const fallbackEvent: MCPEvent = {

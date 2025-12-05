@@ -29,6 +29,7 @@ class AudioEngine {
   private lastPlayTime = 0;
   private readonly THROTTLE_MS = 300; // Minimum time between sounds
   private currentlyPlaying: HTMLAudioElement | null = null;
+  private isMuted = false;
 
   /**
    * Initialize and preload all audio files
@@ -85,11 +86,20 @@ class AudioEngine {
   }
 
   /**
+   * Set mute state
+   */
+  setMuted(muted: boolean): void {
+    this.isMuted = muted;
+    if (muted && this.currentlyPlaying) {
+      this.stopAll();
+    }
+  }
+
+  /**
    * Play sound based on severity level
    */
   playSound(level: SoundLevel): void {
-    if (!this.isInitialized || !this.audioCache) {
-      console.warn('[AudioEngine] Not initialized, skipping sound');
+    if (!this.isInitialized || !this.audioCache || this.isMuted) {
       return;
     }
 
@@ -146,8 +156,7 @@ class AudioEngine {
    * Triggered when code is extremely bad or multiple issues detected
    */
   playLaugh(): void {
-    if (!this.isInitialized || !this.audioCache) {
-      console.warn('[AudioEngine] Not initialized, skipping laugh sound');
+    if (!this.isInitialized || !this.audioCache || this.isMuted) {
       return;
     }
 
@@ -184,10 +193,10 @@ class AudioEngine {
   /**
    * Play "where are you" sound (for inactivity)
    * Triggered after 2 minutes of user inactivity
+   * Limited to 10 seconds duration
    */
   playAlone(): void {
-    if (!this.isInitialized || !this.audioCache) {
-      console.warn('[AudioEngine] Not initialized, skipping alone sound');
+    if (!this.isInitialized || !this.audioCache || this.isMuted) {
       return;
     }
 
@@ -215,7 +224,17 @@ class AudioEngine {
 
       this.currentlyPlaying = audio;
       this.lastPlayTime = now;
-      console.log('[AudioEngine] Playing "where are you" - user inactive');
+      
+      // Stop after 10 seconds
+      setTimeout(() => {
+        if (this.currentlyPlaying === audio) {
+          audio.pause();
+          audio.currentTime = 0;
+          this.currentlyPlaying = null;
+        }
+      }, 10000);
+      
+      console.log('[AudioEngine] Playing "where are you" (10s max) - user inactive');
     } catch (error) {
       console.warn('[AudioEngine] Error playing alone sound:', error);
     }

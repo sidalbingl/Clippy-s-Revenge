@@ -1,0 +1,8 @@
+{
+  "name": "Generate Visual Effects",
+  "description": "Auto-generate CSS animations and effects for severity overlays",
+  "trigger": "onSave",
+  "filePattern": "src/renderer/components/*Overlay.tsx",
+  "command": "echo 'Effect component updated - review animations'",
+  "enabled": true
+}

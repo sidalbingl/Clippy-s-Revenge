@@ -1,0 +1,14 @@
+{
+  "name": "Evil Commit Messages",
+  "description": "Generate dark humor commit messages that match Evil Clippy's personality",
+  "trigger": "preCommit",
+  "command": "echo 'Commit with dark humor - use git commit -m \"feat: [your evil message]\"'",
+  "enabled": true,
+  "examples": [
+    "feat: blood drips now sync with developer tears",
+    "fix: glitch effect no longer summons actual demons",
+    "refactor: extracted soul from monolithic component",
+    "perf: optimized horror - now 60fps of pure dread",
+    "docs: added warnings that nobody will read"
+  ]
+}

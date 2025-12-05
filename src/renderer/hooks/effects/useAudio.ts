@@ -30,11 +30,16 @@ export function useAudio() {
     audioEngine.setVolume(volume);
   }, []);
 
+  const setMuted = useCallback((muted: boolean) => {
+    audioEngine.setMuted(muted);
+  }, []);
+
   return {
     playSound,
     playLaugh,
     playAlone,
     stopAll,
     setVolume,
+    setMuted,
   };
 }

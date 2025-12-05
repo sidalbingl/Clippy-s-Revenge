@@ -40,7 +40,6 @@ body {
   left: 0;
   background: transparent;
   overflow: visible;
-  pointer-events: none;
 }
 
 /* Süzülme Animasyonu */
